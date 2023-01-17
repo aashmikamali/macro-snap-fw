@@ -1,0 +1,2 @@
+osource "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/shields/*/Kconfig.defconfig"
+osource "/opt/nordic/ncs/v2.2.0/nrf/boards/shields/*/Kconfig.defconfig"
