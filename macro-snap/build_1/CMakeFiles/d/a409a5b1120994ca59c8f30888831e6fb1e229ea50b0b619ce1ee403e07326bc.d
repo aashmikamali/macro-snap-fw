@@ -12,7 +12,7 @@ zephyr/linker_zephyr_pre1.cmd: \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/sys/util_macro.h \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/sys/util_internal.h \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/sys/util_loops.h \
-  /opt/nordic/ncs/toolchains/v2.2.0/opt/zephyr-sdk/arm-zephyr-eabi/lib/gcc/arm-zephyr-eabi/12.1.0/include/stdbool.h \
+  /opt/nordic/ncs/v2.2.0/zephyr/lib/libc/minimal/include/stdbool.h \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/devicetree/io-channels.h \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/devicetree/clocks.h \
   /opt/nordic/ncs/v2.2.0/zephyr/include/zephyr/devicetree/gpio.h \

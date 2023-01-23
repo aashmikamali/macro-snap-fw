@@ -500,43 +500,27 @@
  buttons {
   compatible = "gpio-keys";
   button0: button_0 {
-   gpios = <&gpio0 9 (((1 << 1) | (1 << 2)) | (1 << 0))>;
+   gpios = <&gpio0 15 (((1 << 1) | (1 << 2)) | (1 << 0))>;
    label = "User PushButton";
   };
- };
-
- leds {
-  compatible = "gpio-leds";
-  led1: led_1 {
-   gpios = <&gpio0 15 ((1 << 0))>;
-   label = "Blue LED 2";
-  };
-  led2: led_2 {
-   gpios = <&gpio0 12 ((0 << 0) | ((1 << 1) | (1 << 2)))>;
-   label = "Red LED 3";
-  };
-  led3: led_3 {
-   gpios = <&gpio0 14 (0 << 0)>;
-   label = "Green LED 4";
+  button1: button_1 {
+   gpios = <&gpio0 25 (((1 << 1) | (1 << 2)) | (1 << 0))>;
+   label = "FSR_DETECT";
   };
  };
-
- pwmleds {
-  compatible = "pwm-leds";
-  pwm_led0: pwm_led_0 {
-   pwms = <&pwm0 0 (((8) * 1000UL) * 1000UL) (0 << 0)>;
-  };
- };
-
+# 54 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
  zephyr,user {
-  io-channels = <&adc 0>;
+  io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>;
+  io-channel-names = "VBAT", "FSR1", "FSR2", "FSR3";
  };
 
  aliases {
-  led1 = &led1;
-  led2 = &led2;
-  led3 = &led3;
-  pwm0 = &pwm_led0;
+
+
+
+
+  cal-btn = &button0;
+  fsr-det = &button1;
  };
 };
 
@@ -571,20 +555,7 @@
 };
 
 &pinctrl {
- uart0_default: uart0_default {
-  group1 {
-  psels = <((((((0) * 32U) + (16)) & 0x7FU) << 0U) | ((0U & 0xFFFFU) << 16U))>,
-   <((((((0) * 32U) + (18)) & 0x7FU) << 0U) | ((1U & 0xFFFFU) << 16U))>;
-  };
- };
-
- uart0_sleep: uart0_sleep {
-  group1 {
-   psels = <((((((0) * 32U) + (16)) & 0x7FU) << 0U) | ((0U & 0xFFFFU) << 16U))>,
-    <((((((0) * 32U) + (18)) & 0x7FU) << 0U) | ((1U & 0xFFFFU) << 16U))>;
-   low-power-enable;
-  };
- };
+# 114 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
  pwm0_default: pwm0_default {
   group1 {
    psels = <((((((0) * 32U) + (6)) & 0x7FU) << 0U) | ((22U & 0xFFFFU) << 16U))>;
@@ -608,7 +579,32 @@
   reg = <0>;
   zephyr,gain = "ADC_GAIN_1_4";
   zephyr,acquisition-time = <0>;
-  zephyr,input-positive = <4>;
+  zephyr,input-negative = <4>;
+  zephyr,input-positive = <9>;
+  zephyr,reference = "ADC_REF_VDD_1_4";
+  zephyr,resolution = <8>;
+ };
+ channel@1 {
+  reg = <1>;
+  zephyr,gain = "ADC_GAIN_1_4";
+  zephyr,acquisition-time = < 0>;
+  zephyr,input-positive = <3>;
+  zephyr,reference = "ADC_REF_VDD_1_4";
+  zephyr,resolution = <12>;
+ };
+ channel@2 {
+  reg = <2>;
+  zephyr,gain = "ADC_GAIN_1_4";
+  zephyr,acquisition-time = <0>;
+  zephyr,input-positive = <5>;
+  zephyr,reference = "ADC_REF_VDD_1_4";
+  zephyr,resolution = <12>;
+ };
+ channel@3 {
+  reg = <3>;
+  zephyr,gain = "ADC_GAIN_1_4";
+  zephyr,acquisition-time = <0>;
+  zephyr,input-positive = <7>;
   zephyr,reference = "ADC_REF_VDD_1_4";
   zephyr,resolution = <12>;
  };

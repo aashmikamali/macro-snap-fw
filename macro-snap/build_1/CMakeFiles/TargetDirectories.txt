@@ -53,9 +53,9 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/CMakeFiles/edit_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/newlib/CMakeFiles/rebuild_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/newlib/CMakeFiles/edit_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/newlib/CMakeFiles/lib__libc__newlib.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/minimal/CMakeFiles/rebuild_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/minimal/CMakeFiles/edit_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/minimal/CMakeFiles/lib__libc__minimal.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/posix/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/posix/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/posix/CMakeFiles/lib__posix.dir
@@ -92,8 +92,6 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/host/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/host/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/host/CMakeFiles/subsys__bluetooth__host.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/services/CMakeFiles/rebuild_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/services/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/fs/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/fs/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/ipc/CMakeFiles/rebuild_cache.dir
@@ -304,8 +302,6 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/tinycbor/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/tinycrypt/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/tinycrypt/CMakeFiles/edit_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/tinycrypt/lib/CMakeFiles/rebuild_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/tinycrypt/lib/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/TraceRecorder/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/TraceRecorder/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/uoscore-uedhoc/CMakeFiles/rebuild_cache.dir
@@ -320,8 +316,6 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/mpsl/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/mpsl/CMakeFiles/edit_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/crypto/CMakeFiles/rebuild_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/crypto/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/softdevice_controller/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/softdevice_controller/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrf_802154/CMakeFiles/rebuild_cache.dir

@@ -15,3 +15,7 @@ supported:
   - counter
   - pwm
   - adc
+  tests:
+  sample.bluetooth.eddystone:
+    harness: bluetooth
+    tags: bluetooth

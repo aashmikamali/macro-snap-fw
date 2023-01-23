@@ -15,10 +15,8 @@
 		zephyr,uart-mcumgr = &uart0;
 	};
 	aliases {
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
-		pwm0 = &pwm_led0;
+		cal-btn = &button0;
+		fsr-det = &button1;
 	};
 	soc {
 		#address-cells = < 0x1 >;
@@ -132,12 +130,37 @@
 			#io-channel-cells = < 0x1 >;
 			#address-cells = < 0x1 >;
 			#size-cells = < 0x0 >;
-			phandle = < 0x7 >;
+			phandle = < 0x6 >;
 			channel@0 {
 				reg = < 0x0 >;
 				zephyr,gain = "ADC_GAIN_1_4";
 				zephyr,acquisition-time = < 0x0 >;
-				zephyr,input-positive = < 0x4 >;
+				zephyr,input-negative = < 0x4 >;
+				zephyr,input-positive = < 0x9 >;
+				zephyr,reference = "ADC_REF_VDD_1_4";
+				zephyr,resolution = < 0x8 >;
+			};
+			channel@1 {
+				reg = < 0x1 >;
+				zephyr,gain = "ADC_GAIN_1_4";
+				zephyr,acquisition-time = < 0x0 >;
+				zephyr,input-positive = < 0x3 >;
+				zephyr,reference = "ADC_REF_VDD_1_4";
+				zephyr,resolution = < 0xc >;
+			};
+			channel@2 {
+				reg = < 0x2 >;
+				zephyr,gain = "ADC_GAIN_1_4";
+				zephyr,acquisition-time = < 0x0 >;
+				zephyr,input-positive = < 0x5 >;
+				zephyr,reference = "ADC_REF_VDD_1_4";
+				zephyr,resolution = < 0xc >;
+			};
+			channel@3 {
+				reg = < 0x3 >;
+				zephyr,gain = "ADC_GAIN_1_4";
+				zephyr,acquisition-time = < 0x0 >;
+				zephyr,input-positive = < 0x7 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
 				zephyr,resolution = < 0xc >;
 			};
@@ -274,7 +297,6 @@
 			pinctrl-0 = < &pwm0_default >;
 			pinctrl-1 = < &pwm0_sleep >;
 			pinctrl-names = "default", "sleep";
-			phandle = < 0x6 >;
 		};
 		pdm0: pdm@4001d000 {
 			compatible = "nordic,nrf-pdm";
@@ -337,17 +359,6 @@
 	};
 	pinctrl: pin-controller {
 		compatible = "nordic,nrf-pinctrl";
-		uart0_default: uart0_default {
-			group1 {
-				psels = < 0x10 >, < 0x10012 >;
-			};
-		};
-		uart0_sleep: uart0_sleep {
-			group1 {
-				psels = < 0x10 >, < 0x10012 >;
-				low-power-enable;
-			};
-		};
 		pwm0_default: pwm0_default {
 			phandle = < 0x2 >;
 			group1 {
@@ -392,32 +403,16 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = < &gpio0 0x9 0x7 >;
+			gpios = < &gpio0 0xf 0x7 >;
 			label = "User PushButton";
 		};
-	};
-	leds {
-		compatible = "gpio-leds";
-		led1: led_1 {
-			gpios = < &gpio0 0xf 0x1 >;
-			label = "Blue LED 2";
-		};
-		led2: led_2 {
-			gpios = < &gpio0 0xc 0x6 >;
-			label = "Red LED 3";
-		};
-		led3: led_3 {
-			gpios = < &gpio0 0xe 0x0 >;
-			label = "Green LED 4";
-		};
-	};
-	pwmleds {
-		compatible = "pwm-leds";
-		pwm_led0: pwm_led_0 {
-			pwms = < &pwm0 0x0 0x7a1200 0x0 >;
+		button1: button_1 {
+			gpios = < &gpio0 0x19 0x7 >;
+			label = "FSR_DETECT";
 		};
 	};
 	zephyr,user {
-		io-channels = < &adc 0x0 >;
+		io-channels = < &adc 0x0 >, < &adc 0x1 >, < &adc 0x2 >, < &adc 0x3 >;
+		io-channel-names = "VBAT", "FSR1", "FSR2", "FSR3";
 	};
 };

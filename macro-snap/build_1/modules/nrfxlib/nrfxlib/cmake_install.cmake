@@ -44,11 +44,6 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/crypto/cmake_install.cmake")
-endif()
-
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for the subdirectory.
   include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/modules/nrfxlib/nrfxlib/softdevice_controller/cmake_install.cmake")
 endif()
 

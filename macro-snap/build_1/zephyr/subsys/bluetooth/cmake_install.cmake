@@ -47,8 +47,3 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/host/cmake_install.cmake")
 endif()
 
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for the subdirectory.
-  include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/bluetooth/services/cmake_install.cmake")
-endif()
-
