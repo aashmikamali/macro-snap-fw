@@ -19,11 +19,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
-			label = "User PushButton";
+			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "UI_BTN";
 		};
 		button1: button_1 {
-			gpios = <&gpio0 25 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "FSR_DETECT";
 		};
 	};
@@ -61,8 +61,8 @@
 		// led2 = &led2;
 		// led3 = &led3;
 		// pwm0 = &pwm_led0;
-		cal-btn = &button0;
-		fsr-det = &button1;
+		uibtn = &button0;
+		fsrdet = &button1;
 	};
 };
 
@@ -97,20 +97,6 @@
 };
 
 &pinctrl {
-	// uart0_default: uart0_default {
-	// 	group1 {
-	// 	psels = <NRF_PSEL(UART_TX, 0, 16)>,
-	// 		<NRF_PSEL(UART_RX, 0, 18)>;
-	// 	};
-	// };
-
-	// uart0_sleep: uart0_sleep {
-	// 	group1 {
-	// 		psels = <NRF_PSEL(UART_TX, 0, 16)>,
-	// 			<NRF_PSEL(UART_RX, 0, 18)>;
-	// 		low-power-enable;
-	// 	};
-	// };
 	pwm0_default: pwm0_default {
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 0, 6)>;
@@ -174,5 +160,7 @@
 
 &gpio0 {
 	status = "okay";
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 

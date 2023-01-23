@@ -500,11 +500,11 @@
  buttons {
   compatible = "gpio-keys";
   button0: button_0 {
-   gpios = <&gpio0 15 (((1 << 1) | (1 << 2)) | (1 << 0))>;
-   label = "User PushButton";
+   gpios = <&gpio0 15 ((1 << 4) | (1 << 0))>;
+   label = "UI_BTN";
   };
   button1: button_1 {
-   gpios = <&gpio0 25 (((1 << 1) | (1 << 2)) | (1 << 0))>;
+   gpios = <&gpio0 25 ((1 << 4) | (1 << 0))>;
    label = "FSR_DETECT";
   };
  };
@@ -519,8 +519,8 @@
 
 
 
-  cal-btn = &button0;
-  fsr-det = &button1;
+  uibtn = &button0;
+  fsrdet = &button1;
  };
 };
 
@@ -555,7 +555,6 @@
 };
 
 &pinctrl {
-# 114 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
  pwm0_default: pwm0_default {
   group1 {
    psels = <((((((0) * 32U) + (6)) & 0x7FU) << 0U) | ((22U & 0xFFFFU) << 16U))>;
@@ -619,6 +618,8 @@
 
 &gpio0 {
  status = "okay";
+ gpio-controller;
+ #gpio-cells = <2>;
 };
 # 0 "<command-line>" 2
 # 1 "/opt/nordic/ncs/v2.2.0/zephyr/misc/empty_file.c"

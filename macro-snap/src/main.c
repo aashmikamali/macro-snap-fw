@@ -36,36 +36,30 @@ static const struct adc_dt_spec adc_channels[] = {
 			     DT_SPEC_AND_COMMA)
 };
 
-
-// static const struct gpio_dt_spec cal_button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,
-// 							      {0});
-// static struct gpio_callback button_cb_data;
-
-
 #define LED_ON          0
 #define LED_OFF         1
 
-// Get the device tree handles by their friendly name from the c3yberdriver.dts file
+// Get the device tree handles by their friendly name from the macro-snap.dts file
 // static const struct pwm_dt_spec cyber_led = PWM_DT_SPEC_GET(DT_ALIAS(pwm0));
 // static const struct gpio_dt_spec blue_led = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 // static const struct gpio_dt_spec red_led = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 // static const struct gpio_dt_spec green_led = GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios);
-
+static const struct gpio_dt_spec ui_btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(uibtn), gpios,{0});
+static const struct gpio_dt_spec fsr_det = GPIO_DT_SPEC_GET_OR(DT_ALIAS(fsrdet), gpios,{0});
+static struct gpio_callback button_cb_data;
 
 //PWM period
 #define PWM_PERIOD 1000000
-#define ADC_FACTOR 1 // factor for mapping adc readings to bat voltage
 
 
 
 //for bluetooth test
-
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 /* The ble message must be an array of uint*/
-/* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status*/
-uint8_t ble_msg []= {0x1, 0x2, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+/* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status, [8] = band_is_connected (1 = connected)*/
+uint8_t ble_msg []= {0xED, 0xFE, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
@@ -136,7 +130,6 @@ void get_adc_readings (uint8_t* array)
         // Upcast the buffer to a int32_t from int16_t
         array[i] = (uint8_t)buf; // 3.5V = 8192, 4V = <optimized out>
         // Do the conversion to Mv. based on the reference voltage
-        // array[i] *= ADC_FACTOR; // map the value read to the adc value read
     }
 }
 
@@ -146,11 +139,17 @@ void main(void)
     volatile int err;
     volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
 
+    k_msleep(1000);
+
   	/* Initialize the Bluetooth Subsystem */
     err = bt_enable(bt_ready); //causes reset if used in gdb
 
-    //local variables for PWM period
-	uint8_t pwm_pulse = PWM_PERIOD;
+    /* Initialize button and gpio inputs*/
+    err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&fsr_det, GPIO_INPUT);
+	err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
+
     // Initialization
     // gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&red_led, GPIO_OUTPUT_ACTIVE);
@@ -160,32 +159,26 @@ void main(void)
     {
         adc_channel_setup_dt(&adc_channels[i]);
     }
-
+    volatile int val;
     // Begin main logic
     // gpio_pin_set_dt(&blue_led, LED_OFF);
     // gpio_pin_set_dt(&red_led, LED_OFF);
     // gpio_pin_set_dt(&green_led, LED_OFF);
     while(1){
         k_msleep(100);
+        /*poll the ui button and send that the val 1 or not upon press in the ble msg*/
+        val = gpio_pin_get_dt(&ui_btn);
+        ble_msg[6] = val;
+
+        val = gpio_pin_get_dt(&fsr_det);
+        ble_msg[8] = val;
+
         get_adc_readings(adc_readings);
         set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
-        // err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad),
-		// 		      NULL, 0);
-        // k_msleep(1000);
-        // (void)bt_le_adv_stop();
-		// mfg_data[2]++;
 
         
         // gpio_pin_toggle_dt(&blue_led);
         // gpio_pin_toggle_dt(&green_led);
         // gpio_pin_toggle_dt(&red_led);
-
-        //pwm code
-        // if (pwm_pulse < 10000)
-        // {
-        //     pwm_pulse = PWM_PERIOD;
-        // }
-        // pwm_set_dt(&cyber_led, PWM_PERIOD, pwm_pulse); //the largest period possible is 1000000, and the lowest is 1/16 * 10^3
-        // pwm_pulse -= 10000;
     };
 }

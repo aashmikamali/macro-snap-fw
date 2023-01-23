@@ -2,14 +2,6 @@
 	"folders": [
 		{
 			"path": "../.."
-		},
-		{
-			"name": "peripheral_uart",
-			"path": "../../peripheral_uart"
-		},
-		{
-			"name": "peripheral_fast_pair",
-			"path": "../../peripheral_fast_pair"
 		}
 	],
 	"settings": {

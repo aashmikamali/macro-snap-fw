@@ -1460,7 +1460,7 @@
 
 /* Existence and alternate IDs: */
 #define DT_N_S_buttons_S_button_0_EXISTS 1
-#define DT_N_ALIAS_cal_btn     DT_N_S_buttons_S_button_0
+#define DT_N_ALIAS_uibtn       DT_N_S_buttons_S_button_0
 #define DT_N_NODELABEL_button0 DT_N_S_buttons_S_button_0
 
 /* Macros for properties that are special in the specification: */
@@ -1478,7 +1478,7 @@
 #define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_PH DT_N_S_soc_S_gpio_50000000
 #define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_VAL_pin 15
 #define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_VAL_pin_EXISTS 1
-#define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_VAL_flags 7
+#define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_VAL_flags 17
 #define DT_N_S_buttons_S_button_0_P_gpios_IDX_0_VAL_flags_EXISTS 1
 #define DT_N_S_buttons_S_button_0_P_gpios_FOREACH_PROP_ELEM(fn) fn(DT_N_S_buttons_S_button_0, gpios, 0)
 #define DT_N_S_buttons_S_button_0_P_gpios_FOREACH_PROP_ELEM_SEP(fn, sep) fn(DT_N_S_buttons_S_button_0, gpios, 0)
@@ -1486,69 +1486,33 @@
 #define DT_N_S_buttons_S_button_0_P_gpios_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...) fn(DT_N_S_buttons_S_button_0, gpios, 0, __VA_ARGS__)
 #define DT_N_S_buttons_S_button_0_P_gpios_LEN 1
 #define DT_N_S_buttons_S_button_0_P_gpios_EXISTS 1
-#define DT_N_S_buttons_S_button_0_P_label "User PushButton"
-#define DT_N_S_buttons_S_button_0_P_label_STRING_TOKEN User_PushButton
-#define DT_N_S_buttons_S_button_0_P_label_STRING_UPPER_TOKEN USER_PUSHBUTTON
+#define DT_N_S_buttons_S_button_0_P_label "UI_BTN"
+#define DT_N_S_buttons_S_button_0_P_label_STRING_TOKEN UI_BTN
+#define DT_N_S_buttons_S_button_0_P_label_STRING_UPPER_TOKEN UI_BTN
 #define DT_N_S_buttons_S_button_0_P_label_FOREACH_PROP_ELEM(fn) fn(DT_N_S_buttons_S_button_0, label, 0) \
 	fn(DT_N_S_buttons_S_button_0, label, 1) \
 	fn(DT_N_S_buttons_S_button_0, label, 2) \
 	fn(DT_N_S_buttons_S_button_0, label, 3) \
 	fn(DT_N_S_buttons_S_button_0, label, 4) \
-	fn(DT_N_S_buttons_S_button_0, label, 5) \
-	fn(DT_N_S_buttons_S_button_0, label, 6) \
-	fn(DT_N_S_buttons_S_button_0, label, 7) \
-	fn(DT_N_S_buttons_S_button_0, label, 8) \
-	fn(DT_N_S_buttons_S_button_0, label, 9) \
-	fn(DT_N_S_buttons_S_button_0, label, 10) \
-	fn(DT_N_S_buttons_S_button_0, label, 11) \
-	fn(DT_N_S_buttons_S_button_0, label, 12) \
-	fn(DT_N_S_buttons_S_button_0, label, 13) \
-	fn(DT_N_S_buttons_S_button_0, label, 14)
+	fn(DT_N_S_buttons_S_button_0, label, 5)
 #define DT_N_S_buttons_S_button_0_P_label_FOREACH_PROP_ELEM_SEP(fn, sep) fn(DT_N_S_buttons_S_button_0, label, 0) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 1) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 2) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 3) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 4) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 5) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 6) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 7) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 8) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 9) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 10) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 11) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 12) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 13) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 14)
+	fn(DT_N_S_buttons_S_button_0, label, 5)
 #define DT_N_S_buttons_S_button_0_P_label_FOREACH_PROP_ELEM_VARGS(fn, ...) fn(DT_N_S_buttons_S_button_0, label, 0, __VA_ARGS__) \
 	fn(DT_N_S_buttons_S_button_0, label, 1, __VA_ARGS__) \
 	fn(DT_N_S_buttons_S_button_0, label, 2, __VA_ARGS__) \
 	fn(DT_N_S_buttons_S_button_0, label, 3, __VA_ARGS__) \
 	fn(DT_N_S_buttons_S_button_0, label, 4, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 5, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 6, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 7, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 8, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 9, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 10, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 11, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 12, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 13, __VA_ARGS__) \
-	fn(DT_N_S_buttons_S_button_0, label, 14, __VA_ARGS__)
+	fn(DT_N_S_buttons_S_button_0, label, 5, __VA_ARGS__)
 #define DT_N_S_buttons_S_button_0_P_label_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...) fn(DT_N_S_buttons_S_button_0, label, 0, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 1, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 2, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 3, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
 	fn(DT_N_S_buttons_S_button_0, label, 4, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 5, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 6, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 7, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 8, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 9, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 10, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 11, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 12, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 13, __VA_ARGS__) DT_DEBRACKET_INTERNAL sep \
-	fn(DT_N_S_buttons_S_button_0, label, 14, __VA_ARGS__)
+	fn(DT_N_S_buttons_S_button_0, label, 5, __VA_ARGS__)
 #define DT_N_S_buttons_S_button_0_P_label_EXISTS 1
 
 /*
@@ -1595,7 +1559,7 @@
 
 /* Existence and alternate IDs: */
 #define DT_N_S_buttons_S_button_1_EXISTS 1
-#define DT_N_ALIAS_fsr_det     DT_N_S_buttons_S_button_1
+#define DT_N_ALIAS_fsrdet      DT_N_S_buttons_S_button_1
 #define DT_N_NODELABEL_button1 DT_N_S_buttons_S_button_1
 
 /* Macros for properties that are special in the specification: */
@@ -1613,7 +1577,7 @@
 #define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_PH DT_N_S_soc_S_gpio_50000000
 #define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_VAL_pin 25
 #define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_VAL_pin_EXISTS 1
-#define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_VAL_flags 7
+#define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_VAL_flags 17
 #define DT_N_S_buttons_S_button_1_P_gpios_IDX_0_VAL_flags_EXISTS 1
 #define DT_N_S_buttons_S_button_1_P_gpios_FOREACH_PROP_ELEM(fn) fn(DT_N_S_buttons_S_button_1, gpios, 0)
 #define DT_N_S_buttons_S_button_1_P_gpios_FOREACH_PROP_ELEM_SEP(fn, sep) fn(DT_N_S_buttons_S_button_1, gpios, 0)

@@ -15,8 +15,8 @@
 		zephyr,uart-mcumgr = &uart0;
 	};
 	aliases {
-		cal-btn = &button0;
-		fsr-det = &button1;
+		uibtn = &button0;
+		fsrdet = &button1;
 	};
 	soc {
 		#address-cells = < 0x1 >;
@@ -403,11 +403,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = < &gpio0 0xf 0x7 >;
-			label = "User PushButton";
+			gpios = < &gpio0 0xf 0x11 >;
+			label = "UI_BTN";
 		};
 		button1: button_1 {
-			gpios = < &gpio0 0x19 0x7 >;
+			gpios = < &gpio0 0x19 0x11 >;
 			label = "FSR_DETECT";
 		};
 	};

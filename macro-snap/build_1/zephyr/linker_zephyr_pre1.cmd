@@ -1,5 +1,5 @@
  OUTPUT_FORMAT("elf32-littlearm")
-_region_min_align = 4;
+_region_min_align = 32;
 MEMORY
     {
     FLASH (rx) : ORIGIN = (0x0 + 0x0), LENGTH = (192*1K - 0x0)
@@ -188,7 +188,7 @@ ztest :
  . = ALIGN(4);
  } > FLASH
  __rodata_region_end = .;
- . = ALIGN(_region_min_align);
+ . = ALIGN(_region_min_align); . = ALIGN( 1 << ((((__rodata_region_end - ADDR(rom_start)) <= 4) ? 2 : (((__rodata_region_end - ADDR(rom_start)) <= 8) ? 3 : (((__rodata_region_end - ADDR(rom_start)) <= 16) ? 4 : (((__rodata_region_end - ADDR(rom_start)) <= 32) ? 5 : (((__rodata_region_end - ADDR(rom_start)) <= 64) ? 6 : (((__rodata_region_end - ADDR(rom_start)) <= 128) ? 7 : (((__rodata_region_end - ADDR(rom_start)) <= 256) ? 8 : (((__rodata_region_end - ADDR(rom_start)) <= 512) ? 9 : (((__rodata_region_end - ADDR(rom_start)) <= 1024) ? 10 : (((__rodata_region_end - ADDR(rom_start)) <= 2048) ? 11 : (((__rodata_region_end - ADDR(rom_start)) <= 4096) ? 12 : (((__rodata_region_end - ADDR(rom_start)) <= 8192) ? 13 : (((__rodata_region_end - ADDR(rom_start)) <= 16384) ? 14 : (((__rodata_region_end - ADDR(rom_start)) <= 32768) ? 15:(((__rodata_region_end - ADDR(rom_start)) <= 65536) ? 16 : (((__rodata_region_end - ADDR(rom_start)) <= 131072) ? 17 : (((__rodata_region_end - ADDR(rom_start)) <= 262144) ? 18:(((__rodata_region_end - ADDR(rom_start)) <= 524288) ? 19 : (((__rodata_region_end - ADDR(rom_start)) <= 1048576) ? 20 : (((__rodata_region_end - ADDR(rom_start)) <= 2097152) ? 21 : (((__rodata_region_end - ADDR(rom_start)) <= 4194304) ? 22 : (((__rodata_region_end - ADDR(rom_start)) <= 8388608) ? 23 : (((__rodata_region_end - ADDR(rom_start)) <= 16777216) ? 24 : (((__rodata_region_end - ADDR(rom_start)) <= 33554432) ? 25 : (((__rodata_region_end - ADDR(rom_start)) <= 67108864) ? 26 : (((__rodata_region_end - ADDR(rom_start)) <= 134217728) ? 27 : (((__rodata_region_end - ADDR(rom_start)) <= 268435456) ? 28 : (((__rodata_region_end - ADDR(rom_start)) <= 536870912) ? 29 : (((__rodata_region_end - ADDR(rom_start)) <= 1073741824) ? 30 : (((__rodata_region_end - ADDR(rom_start)) <= 2147483648) ? 31 : 32))))))))))))))))))))))))))))))));
  __rom_region_end = __rom_region_start + . - ADDR(rom_start);
    
     /DISCARD/ : {
@@ -203,11 +203,11 @@ ztest :
  _image_ram_start = .;
 .ramfunc : ALIGN_WITH_INPUT
 {
- . = ALIGN(_region_min_align);
+ . = ALIGN(_region_min_align); . = ALIGN( 1 << ((((__ramfunc_size) <= 4) ? 2 : (((__ramfunc_size) <= 8) ? 3 : (((__ramfunc_size) <= 16) ? 4 : (((__ramfunc_size) <= 32) ? 5 : (((__ramfunc_size) <= 64) ? 6 : (((__ramfunc_size) <= 128) ? 7 : (((__ramfunc_size) <= 256) ? 8 : (((__ramfunc_size) <= 512) ? 9 : (((__ramfunc_size) <= 1024) ? 10 : (((__ramfunc_size) <= 2048) ? 11 : (((__ramfunc_size) <= 4096) ? 12 : (((__ramfunc_size) <= 8192) ? 13 : (((__ramfunc_size) <= 16384) ? 14 : (((__ramfunc_size) <= 32768) ? 15:(((__ramfunc_size) <= 65536) ? 16 : (((__ramfunc_size) <= 131072) ? 17 : (((__ramfunc_size) <= 262144) ? 18:(((__ramfunc_size) <= 524288) ? 19 : (((__ramfunc_size) <= 1048576) ? 20 : (((__ramfunc_size) <= 2097152) ? 21 : (((__ramfunc_size) <= 4194304) ? 22 : (((__ramfunc_size) <= 8388608) ? 23 : (((__ramfunc_size) <= 16777216) ? 24 : (((__ramfunc_size) <= 33554432) ? 25 : (((__ramfunc_size) <= 67108864) ? 26 : (((__ramfunc_size) <= 134217728) ? 27 : (((__ramfunc_size) <= 268435456) ? 28 : (((__ramfunc_size) <= 536870912) ? 29 : (((__ramfunc_size) <= 1073741824) ? 30 : (((__ramfunc_size) <= 2147483648) ? 31 : 32))))))))))))))))))))))))))))))));
  __ramfunc_start = .;
  *(.ramfunc)
  *(".ramfunc.*")
- . = ALIGN(_region_min_align);
+ . = ALIGN(_region_min_align); . = ALIGN( 1 << ((((__ramfunc_size) <= 4) ? 2 : (((__ramfunc_size) <= 8) ? 3 : (((__ramfunc_size) <= 16) ? 4 : (((__ramfunc_size) <= 32) ? 5 : (((__ramfunc_size) <= 64) ? 6 : (((__ramfunc_size) <= 128) ? 7 : (((__ramfunc_size) <= 256) ? 8 : (((__ramfunc_size) <= 512) ? 9 : (((__ramfunc_size) <= 1024) ? 10 : (((__ramfunc_size) <= 2048) ? 11 : (((__ramfunc_size) <= 4096) ? 12 : (((__ramfunc_size) <= 8192) ? 13 : (((__ramfunc_size) <= 16384) ? 14 : (((__ramfunc_size) <= 32768) ? 15:(((__ramfunc_size) <= 65536) ? 16 : (((__ramfunc_size) <= 131072) ? 17 : (((__ramfunc_size) <= 262144) ? 18:(((__ramfunc_size) <= 524288) ? 19 : (((__ramfunc_size) <= 1048576) ? 20 : (((__ramfunc_size) <= 2097152) ? 21 : (((__ramfunc_size) <= 4194304) ? 22 : (((__ramfunc_size) <= 8388608) ? 23 : (((__ramfunc_size) <= 16777216) ? 24 : (((__ramfunc_size) <= 33554432) ? 25 : (((__ramfunc_size) <= 67108864) ? 26 : (((__ramfunc_size) <= 134217728) ? 27 : (((__ramfunc_size) <= 268435456) ? 28 : (((__ramfunc_size) <= 536870912) ? 29 : (((__ramfunc_size) <= 1073741824) ? 30 : (((__ramfunc_size) <= 2147483648) ? 31 : 32))))))))))))))))))))))))))))))));
  __ramfunc_end = .;
 } > RAM AT > FLASH
 __ramfunc_size = __ramfunc_end - __ramfunc_start;

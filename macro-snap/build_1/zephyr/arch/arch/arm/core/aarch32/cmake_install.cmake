@@ -42,3 +42,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/cortex_m/cmake_install.cmake")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/mpu/cmake_install.cmake")
+endif()
+

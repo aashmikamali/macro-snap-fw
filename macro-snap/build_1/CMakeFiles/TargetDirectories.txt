@@ -49,6 +49,9 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/cortex_m/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/cortex_m/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/cortex_m/CMakeFiles/arch__arm__core__aarch32__cortex_m.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/mpu/CMakeFiles/rebuild_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/mpu/CMakeFiles/edit_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/arch/arch/arm/core/aarch32/mpu/CMakeFiles/arch__arm__core__aarch32__mpu.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/lib/libc/CMakeFiles/rebuild_cache.dir
@@ -67,6 +70,7 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/common/cortex_m/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/common/cortex_m/CMakeFiles/edit_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/common/cortex_m/CMakeFiles/soc__arm__common__cortex_m.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/nordic_nrf/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/nordic_nrf/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/soc/arm/nordic_nrf/nrf52/CMakeFiles/rebuild_cache.dir
