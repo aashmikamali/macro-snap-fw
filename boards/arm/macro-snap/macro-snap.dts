@@ -27,7 +27,18 @@
 			label = "FSR_DETECT";
 		};
 	};
-
+	// soc{
+		// spi0: spi@40004000 {
+		// 	compatible = "nordic,nrf-spim";
+		// 	#address-cells = <1>;
+		// 	#size-cells = <0>;
+		// 	status = "okay";
+		// 	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		// 	pinctrl-0 = <&spi0_default>;
+		// 	pinctrl-1 = <&spi0_sleep>;
+		// 	pinctrl-names = "default", "sleep";
+		// };
+	// };
 	// leds {
 	// 	compatible = "gpio-leds";
 	// 	led1: led_1 {
@@ -63,6 +74,7 @@
 		// pwm0 = &pwm_led0;
 		uibtn = &button0;
 		fsrdet = &button1;
+		spizero = &spi0;
 	};
 };
 
@@ -97,15 +109,31 @@
 };
 
 &pinctrl {
-	pwm0_default: pwm0_default {
+	// pwm0_default: pwm0_default {
+	// 	group1 {
+	// 		psels = <NRF_PSEL(PWM_OUT0, 0, 6)>;
+	// 	};
+	// };
+
+	// pwm0_sleep: pwm0_sleep {
+	// 	group1 {
+	// 		psels = <NRF_PSEL(PWM_OUT0, 0, 6)>;
+	// 		low-power-enable;
+	// 	};
+	// };
+	spi0_default: spi0_default {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 6)>;
+			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
+				<NRF_PSEL(SPIM_MISO, 0, 10)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 9)>;
 		};
 	};
 
-	pwm0_sleep: pwm0_sleep {
+	spi0_sleep: spi0_sleep {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 6)>;
+			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
+				<NRF_PSEL(SPIM_MISO, 0, 10)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 9)>;
 			low-power-enable;
 		};
 	};
@@ -131,7 +159,7 @@
 		zephyr,acquisition-time = < ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN2>;
 		zephyr,reference = "ADC_REF_VDD_1_4"; //Need to use 1_4 for full range of VDD be used
-		zephyr,resolution = <12>;
+		zephyr,resolution = <8>;
 	};
 	channel@2 {
 		reg = <2>;
@@ -139,7 +167,7 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN4>;
 		zephyr,reference = "ADC_REF_VDD_1_4"; //Need to use 1_4 for full range of VDD be used
-		zephyr,resolution = <12>;
+		zephyr,resolution = <8>;
 	};
 	channel@3 {
 		reg = <3>;
@@ -147,20 +175,32 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN6>;
 		zephyr,reference = "ADC_REF_VDD_1_4"; //Need to use 1_4 for full range of VDD be used
-		zephyr,resolution = <12>;
+		zephyr,resolution = <8>;
 	};
  };
 
-&pwm0 {
-	status = "okay";
-	pinctrl-0 = <&pwm0_default>;
-	pinctrl-1 = <&pwm0_sleep>;
-	pinctrl-names = "default", "sleep";
-};
+// &pwm0 {
+// 	status = "okay";
+// 	pinctrl-0 = <&pwm0_default>;
+// 	pinctrl-1 = <&pwm0_sleep>;
+// 	pinctrl-names = "default", "sleep";
+// };
 
 &gpio0 {
 	status = "okay";
 	gpio-controller;
 	#gpio-cells = <2>;
+};
+
+&spi0 {
+  compatible = "nordic,nrf-spim";
+  status = "okay";
+  pinctrl-0 = <&spi0_default>;
+  pinctrl-1 = <&spi0_sleep>;
+  cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+  pinctrl-names = "default", "sleep";
+  spi-device@0 {
+                  reg = <0>;
+          };
 };
 

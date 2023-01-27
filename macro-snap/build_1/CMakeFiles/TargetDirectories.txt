@@ -162,9 +162,9 @@
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/gpio/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/gpio/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/gpio/CMakeFiles/drivers__gpio.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/pwm/CMakeFiles/rebuild_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/pwm/CMakeFiles/edit_cache.dir
-/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/pwm/CMakeFiles/drivers__pwm.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/spi/CMakeFiles/rebuild_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/spi/CMakeFiles/edit_cache.dir
+/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/spi/CMakeFiles/drivers__spi.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/entropy/CMakeFiles/rebuild_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/entropy/CMakeFiles/edit_cache.dir
 /Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/drivers/entropy/CMakeFiles/drivers__entropy.dir

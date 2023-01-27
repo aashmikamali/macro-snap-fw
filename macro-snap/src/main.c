@@ -7,16 +7,18 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/pwm.h>
+// #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/spi.h>
 
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
@@ -43,14 +45,88 @@ static const struct adc_dt_spec adc_channels[] = {
 // static const struct pwm_dt_spec cyber_led = PWM_DT_SPEC_GET(DT_ALIAS(pwm0));
 // static const struct gpio_dt_spec blue_led = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 // static const struct gpio_dt_spec red_led = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
-// static const struct gpio_dt_spec green_led = GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios);
+// static const struct gpio_dt_spec cs_hapt = GPIO_DT_SPEC_GET(DT_ALIAS(spi0), gpios);
 static const struct gpio_dt_spec ui_btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(uibtn), gpios,{0});
 static const struct gpio_dt_spec fsr_det = GPIO_DT_SPEC_GET_OR(DT_ALIAS(fsrdet), gpios,{0});
-static struct gpio_callback button_cb_data;
+// static struct gpio_callback button_cb_data;
 
-//PWM period
-#define PWM_PERIOD 1000000
+/* SPI defines for the BOS1901 haptic driver*/
+#define BOS1901_MANUFACTURER_ID_ADDR 0x02
+#define BOS1901_REG_REF_ADDR 0x0
+#define BOS1901_REG_REF_AMP_DATA 0b111110010010 //110 (calculated from formula for 12V output) in two's complement
+#define BOS1901_REG_KP_ADDR 0x03
+#define BOS1901_REG_KP_SQ_MASK 0b111111111111 //masks are setup to && with whatever is already in there
+#define BOS1901_REG_KP_NO_SQ_MASK 0b011111111111
+#define BOS1901_REG_KP_DATA 0x080
+#define BOS1901_REG_KPA_KI_ADDR 0x04
+#define BOS1901_REG_CONFIG_ADDR 0x05
+#define BOS1901_REG_CONFIG_OE_MASK 0b111110010000 //masks are setup to && with whatever is already in there
+#define BOS1901_REG_CONFIG_NO_OE_MASK 0b111110000000 //masks are setup to && with whatever is already in there
 
+// #define DT_DRV_COMPAT nordic_nrf_spim
+// struct spi_cs_control spi_cs = {
+// 	.gpio_pin = DT_GPIO_PIN(DT_DRV_INST(0), cs_gpios),
+// 	.gpio_dt_flags = GPIO_ACTIVE_LOW,
+// 	.delay = 0,
+// };
+
+static const struct spi_config spi_cfg = {
+	.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
+		     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_OP_MODE_MASTER,
+	.frequency = 8000000,
+	.slave = 0, //0
+	// .cs = 1,
+};
+
+const struct device * spi_dev = DEVICE_DT_GET(DT_ALIAS(spizero)); 
+
+
+uint8_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
+{
+	int err;
+	// static uint8_t tx_buffer[2]; //this should return the manufacturer id in rx buffer (hopefully)
+	// static uint8_t rx_buffer[2];
+
+	uint8_t rx_dummy = 0x00;
+	uint8_t rx_dummy2 = 0x00;
+	struct spi_buf tx_buffer[] = 
+	{
+	{
+		.buf = &combo_word_1,
+		.len = (size_t) sizeof(combo_word_1)
+	},
+	{
+		.buf = &combo_word_2,
+		.len = (size_t) sizeof(combo_word_2)
+	}
+	};
+	struct spi_buf rx_buffer[] = {
+		{
+		.buf = &rx_dummy,
+		.len = (size_t) sizeof(rx_dummy)
+		},
+		{
+		.buf = &rx_dummy2,
+		.len = (size_t) sizeof(rx_dummy2)			
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = tx_buffer,
+		.count = 2
+	};
+
+	struct spi_buf_set rx = {
+		.buffers = rx_buffer,
+		.count = 2
+	};
+
+	err = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+
+	int b22 = 3;
+	b22++;
+	return rx_dummy;
+}
 
 
 //for bluetooth test
@@ -59,7 +135,7 @@ static struct gpio_callback button_cb_data;
 
 /* The ble message must be an array of uint*/
 /* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status, [8] = band_is_connected (1 = connected)*/
-uint8_t ble_msg []= {0xED, 0xFE, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+uint8_t ble_msg []= {0xAB, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
@@ -137,28 +213,31 @@ void get_adc_readings (uint8_t* array)
 void main(void)
 {
     volatile int err;
-    volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
+    // volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
 
     k_msleep(1000);
 
   	/* Initialize the Bluetooth Subsystem */
-    err = bt_enable(bt_ready); //causes reset if used in gdb
+    // err = bt_enable(bt_ready); //causes reset if used in gdb
 
     /* Initialize button and gpio inputs*/
-    err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
-	err = gpio_pin_configure_dt(&fsr_det, GPIO_INPUT);
-	err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
-	err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
+    // err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
+	// err = gpio_pin_configure_dt(&fsr_det, GPIO_INPUT);
+	// err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
+	// err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
+
+    /* SPI Initialization*/
+    // spi_init();
 
     // Initialization
     // gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&red_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&green_led, GPIO_OUTPUT_ACTIVE);
 
-    for(uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++)
-    {
-        adc_channel_setup_dt(&adc_channels[i]);
-    }
+    // for(uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++)
+    // {
+    //     adc_channel_setup_dt(&adc_channels[i]);
+    // }
     volatile int val;
     // Begin main logic
     // gpio_pin_set_dt(&blue_led, LED_OFF);
@@ -166,17 +245,21 @@ void main(void)
     // gpio_pin_set_dt(&green_led, LED_OFF);
     while(1){
         k_msleep(100);
+		uint8_t bleh = spi_read_write(0x01, 0x62);
+		// spi_read_write(0x3880);
+		// spi_read_write(0x5210);
+
         /*poll the ui button and send that the val 1 or not upon press in the ble msg*/
-        val = gpio_pin_get_dt(&ui_btn);
-        ble_msg[6] = val;
+        // val = gpio_pin_get_dt(&ui_btn);
+        // ble_msg[6] = val;
 
-        val = gpio_pin_get_dt(&fsr_det);
-        ble_msg[8] = val;
+        // val = gpio_pin_get_dt(&fsr_det);
+        // ble_msg[8] = val;
 
-        get_adc_readings(adc_readings);
-        set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+        // get_adc_readings(adc_readings);
+        // set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
 
-        
+        //testing spi code
         // gpio_pin_toggle_dt(&blue_led);
         // gpio_pin_toggle_dt(&green_led);
         // gpio_pin_toggle_dt(&red_led);

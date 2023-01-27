@@ -13,7 +13,8 @@
 		"files.associations": {
 			"random": "c",
 			"hci.h": "c",
-			"pwm.h": "c"
+			"pwm.h": "c",
+			"spi.h": "c"
 		}
 	}
 }

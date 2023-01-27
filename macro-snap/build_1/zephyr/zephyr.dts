@@ -17,6 +17,7 @@
 	aliases {
 		uibtn = &button0;
 		fsrdet = &button1;
+		spizero = &spi0;
 	};
 	soc {
 		#address-cells = < 0x1 >;
@@ -114,7 +115,14 @@
 			reg = < 0x40004000 0x1000 >;
 			interrupts = < 0x4 0x1 >;
 			max-frequency = < 0x7a1200 >;
-			status = "disabled";
+			status = "okay";
+			pinctrl-0 = < &spi0_default >;
+			pinctrl-1 = < &spi0_sleep >;
+			cs-gpios = < &gpio0 0x1 0x1 >;
+			pinctrl-names = "default", "sleep";
+			spi-device@0 {
+				reg = < 0x0 >;
+			};
 		};
 		gpiote: gpiote@40006000 {
 			compatible = "nordic,nrf-gpiote";
@@ -146,7 +154,7 @@
 				zephyr,acquisition-time = < 0x0 >;
 				zephyr,input-positive = < 0x3 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
-				zephyr,resolution = < 0xc >;
+				zephyr,resolution = < 0x8 >;
 			};
 			channel@2 {
 				reg = < 0x2 >;
@@ -154,7 +162,7 @@
 				zephyr,acquisition-time = < 0x0 >;
 				zephyr,input-positive = < 0x5 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
-				zephyr,resolution = < 0xc >;
+				zephyr,resolution = < 0x8 >;
 			};
 			channel@3 {
 				reg = < 0x3 >;
@@ -162,7 +170,7 @@
 				zephyr,acquisition-time = < 0x0 >;
 				zephyr,input-positive = < 0x7 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
-				zephyr,resolution = < 0xc >;
+				zephyr,resolution = < 0x8 >;
 			};
 		};
 		timer0: timer@40008000 {
@@ -188,7 +196,7 @@
 			cc-num = < 0x4 >;
 			interrupts = < 0xa 0x1 >;
 			prescaler = < 0x0 >;
-			phandle = < 0x4 >;
+			phandle = < 0x5 >;
 		};
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
@@ -292,11 +300,8 @@
 			compatible = "nordic,nrf-pwm";
 			reg = < 0x4001c000 0x1000 >;
 			interrupts = < 0x1c 0x1 >;
-			status = "okay";
+			status = "disabled";
 			#pwm-cells = < 0x3 >;
-			pinctrl-0 = < &pwm0_default >;
-			pinctrl-1 = < &pwm0_sleep >;
-			pinctrl-names = "default", "sleep";
 		};
 		pdm0: pdm@4001d000 {
 			compatible = "nordic,nrf-pdm";
@@ -354,21 +359,21 @@
 			#gpio-cells = < 0x2 >;
 			status = "okay";
 			port = < 0x0 >;
-			phandle = < 0x5 >;
+			phandle = < 0x4 >;
 		};
 	};
 	pinctrl: pin-controller {
 		compatible = "nordic,nrf-pinctrl";
-		pwm0_default: pwm0_default {
+		spi0_default: spi0_default {
 			phandle = < 0x2 >;
 			group1 {
-				psels = < 0x160006 >;
+				psels = < 0x40006 >, < 0x6000a >, < 0x50009 >;
 			};
 		};
-		pwm0_sleep: pwm0_sleep {
+		spi0_sleep: spi0_sleep {
 			phandle = < 0x3 >;
 			group1 {
-				psels = < 0x160006 >;
+				psels = < 0x40006 >, < 0x6000a >, < 0x50009 >;
 				low-power-enable;
 			};
 		};
