@@ -43,7 +43,7 @@ static const struct adc_dt_spec adc_channels[] = {
 
 // Get the device tree handles by their friendly name from the macro-snap.dts file
 // static const struct pwm_dt_spec cyber_led = PWM_DT_SPEC_GET(DT_ALIAS(pwm0));
-// static const struct gpio_dt_spec blue_led = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
+static const struct gpio_dt_spec blue_led = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 // static const struct gpio_dt_spec red_led = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 // static const struct gpio_dt_spec cs_hapt = GPIO_DT_SPEC_GET(DT_ALIAS(spi0), gpios);
 static const struct gpio_dt_spec ui_btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(uibtn), gpios,{0});
@@ -81,14 +81,15 @@ static const struct spi_config spi_cfg = {
 const struct device * spi_dev = DEVICE_DT_GET(DT_ALIAS(spizero)); 
 
 
-uint8_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
+uint16_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 {
 	int err;
 	// static uint8_t tx_buffer[2]; //this should return the manufacturer id in rx buffer (hopefully)
 	// static uint8_t rx_buffer[2];
 
-	uint8_t rx_dummy = 0x00;
-	uint8_t rx_dummy2 = 0x00;
+	uint8_t rx_dummy= 0x00;
+	uint8_t rx_dummy2= 0x00;
+
 	struct spi_buf tx_buffer[] = 
 	{
 	{
@@ -120,14 +121,14 @@ uint8_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 		.buffers = rx_buffer,
 		.count = 2
 	};
-
+    gpio_pin_toggle_dt(&blue_led);
 	err = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    gpio_pin_toggle_dt(&blue_led);
 
-	int b22 = 3;
-	b22++;
-	return rx_dummy;
+	
+	uint16_t rx_receive = ((uint16_t)rx_dummy << 8) | rx_dummy2;
+	return rx_receive;
 }
-
 
 //for bluetooth test
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
@@ -230,7 +231,7 @@ void main(void)
     // spi_init();
 
     // Initialization
-    // gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&red_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&green_led, GPIO_OUTPUT_ACTIVE);
 
@@ -240,12 +241,15 @@ void main(void)
     // }
     volatile int val;
     // Begin main logic
-    // gpio_pin_set_dt(&blue_led, LED_OFF);
+    gpio_pin_set_dt(&blue_led, LED_ON);
     // gpio_pin_set_dt(&red_led, LED_OFF);
     // gpio_pin_set_dt(&green_led, LED_OFF);
+	volatile uint16_t read_back_data [] = {0x00, 0x00};
     while(1){
         k_msleep(100);
-		uint8_t bleh = spi_read_write(0x01, 0x62);
+		read_back_data[0] = spi_read_write(0x00, 0x6E);
+		read_back_data[1] = spi_read_write(0x00, 0x6E);
+
 		// spi_read_write(0x3880);
 		// spi_read_write(0x5210);
 

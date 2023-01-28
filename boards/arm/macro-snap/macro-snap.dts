@@ -39,12 +39,12 @@
 		// 	pinctrl-names = "default", "sleep";
 		// };
 	// };
-	// leds {
-	// 	compatible = "gpio-leds";
-	// 	led1: led_1 {
-	// 		gpios = <&gpio0 15 (GPIO_ACTIVE_LOW)>;
-	// 		label = "Blue LED 2";
-	// 	};
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>;
+			label = "Blue LED 2";
+		};
 	// 	led2: led_2 {
 	// 		gpios = <&gpio0 12 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 	// 		label = "Red LED 3";
@@ -53,7 +53,7 @@
 	// 		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 	// 		label = "Green LED 4";
 	// 	};
-	// };
+	};
 
 	// pwmleds {
 	// 	compatible = "pwm-leds";
@@ -68,7 +68,7 @@
 	};
 
 	aliases {
-		// led1 = &led1;
+		led1 = &led1;
 		// led2 = &led2;
 		// led3 = &led3;
 		// pwm0 = &pwm_led0;

@@ -508,6 +508,15 @@
    label = "FSR_DETECT";
   };
  };
+# 42 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
+ leds {
+  compatible = "gpio-leds";
+  led1: led_1 {
+   gpios = <&gpio0 1 ((1 << 0))>;
+   label = "Blue LED 2";
+  };
+# 56 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
+ };
 # 65 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
  zephyr,user {
   io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>;
@@ -515,7 +524,7 @@
  };
 
  aliases {
-
+  led1 = &led1;
 
 
 
