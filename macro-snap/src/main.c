@@ -341,7 +341,7 @@ static void drivingPressCreepStabilization()
 
 void play_haptic_buzz_normal ()
 {
-	for (int a = 0; a < 150; a++)
+	for (int a = 0; a < 80; a++)
 	{
 		drivingPressFeedback();
 		k_msleep(5);
@@ -357,7 +357,7 @@ void play_haptic_buzz_normal ()
 
 /* The ble message must be an array of uint*/
 /* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status, [8] = band_is_connected (1 = connected)*/
-uint8_t ble_msg []= {0xAB, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+uint8_t ble_msg []= {0x0B, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
@@ -435,61 +435,48 @@ void get_adc_readings (uint8_t* array)
 void main(void)
 {
     volatile int err;
-    // volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
+    volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
     k_msleep(1000);
 
   	/* Initialize the Bluetooth Subsystem */
-    // err = bt_enable(bt_ready); //causes reset if used in gdb
+    err = bt_enable(bt_ready); //causes reset if used in gdb
 
     /* Initialize button and gpio inputs*/
-    // err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
-	// err = gpio_pin_configure_dt(&fsr_det, GPIO_INPUT);
-	// err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
-	// err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
+    err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&fsr_det, GPIO_INPUT);
+	err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
 
     // Initialization
-    gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE); //need to rename to chip select
     gpio_pin_set_dt(&blue_led, LED_ON);
 	volatile uint16_t ignore = spi_read_write(0x00, 0x6E);
 
-    // gpio_pin_configure_dt(&red_led, GPIO_OUTPUT_ACTIVE);
-    // gpio_pin_configure_dt(&green_led, GPIO_OUTPUT_ACTIVE);
+    for(uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++)
+    {
+        adc_channel_setup_dt(&adc_channels[i]);
+    }
 
-    // for(uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++)
-    // {
-    //     adc_channel_setup_dt(&adc_channels[i]);
-    // }
-    // volatile int val;
-    // Begin main logic
-    // gpio_pin_set_dt(&red_led, LED_OFF);
-    // gpio_pin_set_dt(&green_led, LED_OFF);
-	// volatile uint16_t read_back_data [] = {0x00, 0x00};
+    volatile int val;
+
 	/* SPI Initialization*/
-    // spi_init();
 	drivingCalculateWaveforms();
-	// drivingTrimming();
+	// Begin main logic
     while(1){
-		play_haptic_buzz_normal();
-		k_msleep(2000);
-		// read_back_data[0] = spi_read_write(0x00, 0x6E);
-		// read_back_data[1] = spi_read_write(0x00, 0x6E);
-
-		// spi_read_write(0x3880);
-		// spi_read_write(0x5210);
+		k_msleep(100);
 
         /*poll the ui button and send that the val 1 or not upon press in the ble msg*/
-        // val = gpio_pin_get_dt(&ui_btn);
-        // ble_msg[6] = val;
+        val = gpio_pin_get_dt(&ui_btn);
+        ble_msg[6] = val;
+		if (val == 1)
+		{
+			play_haptic_buzz_normal();
+		}
 
-        // val = gpio_pin_get_dt(&fsr_det);
-        // ble_msg[8] = val;
+        val = gpio_pin_get_dt(&fsr_det);
+        ble_msg[8] = val;
 
-        // get_adc_readings(adc_readings);
-        // set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
-
-        //testing spi code
-        // gpio_pin_toggle_dt(&blue_led);
-        // gpio_pin_toggle_dt(&green_led);
-        // gpio_pin_toggle_dt(&red_led);
+        get_adc_readings(adc_readings);
+        set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
     };
 }
