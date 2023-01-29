@@ -54,6 +54,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/cpp/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/macro-snap/build_1/zephyr/subsys/fs/cmake_install.cmake")
 endif()
 

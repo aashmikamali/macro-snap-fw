@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
+#include <stdio.h>
+#include <math.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -63,13 +65,11 @@ static const struct gpio_dt_spec fsr_det = GPIO_DT_SPEC_GET_OR(DT_ALIAS(fsrdet),
 #define BOS1901_REG_CONFIG_OE_MASK 0b111110010000 //masks are setup to && with whatever is already in there
 #define BOS1901_REG_CONFIG_NO_OE_MASK 0b111110000000 //masks are setup to && with whatever is already in there
 
-// #define DT_DRV_COMPAT nordic_nrf_spim
-// struct spi_cs_control spi_cs = {
-// 	.gpio_pin = DT_GPIO_PIN(DT_DRV_INST(0), cs_gpios),
-// 	.gpio_dt_flags = GPIO_ACTIVE_LOW,
-// 	.delay = 0,
-// };
+//////////////////////SPIIIIIII FUNCTIONS BEGIN /////////////////////////////////////////////////////////////////////////////////////////
+///ALL the spi read_write shit ////////////////////////////////////////////
+const struct device * spi_dev = DEVICE_DT_GET(DT_ALIAS(spizero)); 
 
+//note that cs is being set by the blue LED gpio currently
 static const struct spi_config spi_cfg = {
 	.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
 		     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_OP_MODE_MASTER,
@@ -77,9 +77,6 @@ static const struct spi_config spi_cfg = {
 	.slave = 0, //0
 	// .cs = 1,
 };
-
-const struct device * spi_dev = DEVICE_DT_GET(DT_ALIAS(spizero)); 
-
 
 uint16_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 {
@@ -129,7 +126,231 @@ uint16_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 	uint16_t rx_receive = ((uint16_t)rx_dummy << 8) | rx_dummy2;
 	return rx_receive;
 }
+/////////////////////////////////////////////////////////////////////////////////////////
 
+//Reference Values
+#define REFERENCE_ZERO       0x0000
+#define REFERENCE_PLUS_1LSB  0x0001
+#define REFERENCE_MINUS_1LSB 0x0FFF
+
+//Feedback
+#define SIGNAL_SIZE_MAX             256 // Maximum table size
+#define PRESS_SIGNAL_VOLTAGE        12  // Volts
+#define PRESS_SIGNAL_FREQ           180 // Hertz
+#define REG_READ_VFEEDBACK_MASK     0x03FF
+
+// Piezo Creep
+#define CREEP_HOLD_TIME     40 // Cycles of 125us (8kHz)
+
+// Timer
+#define TIMER_PERIOD_ACCEL  3 // 3 ticks faster than 125-1
+
+// Trimming
+#define FIFO_SPACE_MASK (0x7F)
+#define MAX_TRY         10800
+#define TRIM_OSC_MAX_POS 0x1F
+#define TRIM_OSC_MASK    0x3F
+
+//playback defines
+#define SAMPLING_RATE	(8000)
+#define PLAY_SAMPLING_RATE (8000)
+
+
+// variables for haptic algo
+static uint16_t press_waveform[SIGNAL_SIZE_MAX];   // Press feedback waveform data points
+static uint16_t press_waveform_size = 0;           // Press feedback waveform number of data points
+
+// Period variables associated with interrupt timer2
+static volatile uint32_t timer2DefaultPeriod;
+static volatile uint32_t timer2NewPeriod;
+
+// Convert value in volts to Amplitude FIFO code
+int16_t utilsVolt2Amplitude(float volt)
+{
+    int16_t amplitude = volt*2047/3.6/31;
+
+    return amplitude;
+}
+
+// Calculate Press and Release Feedback Waveforms
+static void drivingCalculateWaveforms(void)
+{
+    // Press Feedback Waveform : single sine pulse
+    press_waveform_size = PLAY_SAMPLING_RATE / PRESS_SIGNAL_FREQ; //about 44
+    for(volatile uint8_t i = 0; i < press_waveform_size; i++)
+    {
+        press_waveform[i] = utilsVolt2Amplitude(PRESS_SIGNAL_VOLTAGE / 2 * (sin(2*3*i/(press_waveform_size) - 3/2)+1));
+    }
+}
+
+
+
+// Wait until BOS1901 internal FIFO is empty
+static void drivingWaitFifoEmpty()
+{
+    bool fifoempty = 0;
+
+    //Set up broadcast to read IC_STATUS
+    spi_read_write(0x56, 0x17);  // Set BC = IC_STATUS
+
+     // loop until FIFO is empty
+    while(!fifoempty)
+    {
+        uint16_t ic_status_reg = spi_read_write(0xC0, 0x00); // dummy write, get IC_STATUS value
+        fifoempty = (ic_status_reg >> 6) & 0x1; // extract EMPTY value.
+    }
+}
+
+// Software trimming element function
+bool drivingSoftwareTrim()
+{
+	uint16_t reg = 0;
+    bool succeed = 0;
+	
+	//Need to disable the channel to do software trim
+    spi_read_write(0x56, 0x07);
+
+    //Set the mode to read trim values from register. Value will be available in TRIM_REGISTER and can be read from CONFIG BC
+    spi_read_write(0xE8, 0x00); // TRIMRW = 2, SDOBP = 0, TRIM_OSC = 0, TRIM_REG = 0
+	
+    //Sets the CONFIG BC to read TRIM register
+    spi_read_write(0x57, 0x07);
+
+    //Read TRIM register and add 1 to TRIM_OSC
+    reg = spi_read_write(0x57, 0x07);
+    uint16_t regMask = 0x3 << 10 | 0x3F << 3;  // mask to manipulate register paramters TRIMRW and TRIM_OSC
+    uint16_t TRIM_OSC = ((reg >> 3)  + 0x1) & TRIM_OSC_MASK; // gets TRIM_OSC value and increments 1
+    succeed = (((reg >> 3) & TRIM_OSC_MASK) & TRIM_OSC_MAX_POS) != TRIM_OSC_MAX_POS; // check if reached maximum TRIM_OSC value
+    reg &= ~regMask; // set TRIM_OSC bits to 0
+    reg |= 0x3 << 10; // set TRIMRW to write mode
+    reg |= TRIM_OSC << 3; // set new TRIM_OSC value
+	uint8_t reg1 = (uint8_t)((reg & 0xFF00) >> 8);
+	uint8_t reg2 = (uint8_t)(reg & 0x00FF);
+
+	//Write the register with new TRIM_OSC parameter
+    if(succeed)
+    {
+        spi_read_write(reg1, reg2);
+    }
+    
+	// Reenable output and set BC back to IC_STATUS
+    spi_read_write(0x56, 0x17);
+    // Clear fifo before exiting
+    drivingWaitFifoEmpty();
+    
+	k_msleep(1); // temp
+    
+    return succeed;
+}
+
+// Trim internal oscillator to fit MCU sampling rate
+static void drivingTrimming(void) {
+
+
+    // Initialization
+
+	// Reset IC
+	spi_read_write(0x56, 0xA7);  // Reset IC, set SDO broadcast to SENSE register to read VFEEDBACK, set PLAY sampling rate to 8kSPS.
+	k_msleep(1);
+
+	//Set the mode to latch hardware fuses to trim block. Data are available in TRIM register. Trimming will start at factory-trimmed value.
+	spi_read_write(0xE4, 0x00); // TRIMRW = 1, SDOBP = 0, TRIM_OSC = 0, TRIM_REG = 0
+
+	//sets BC to IC_STATUS & enables output, PLAY = 8kSPS
+	spi_read_write(0x56, 0x17);
+
+  	//set the timer at 8.2kHz to have BOS1901 FIFO clear faster than 8kHz
+	 timer2NewPeriod = timer2DefaultPeriod - TIMER_PERIOD_ACCEL;
+
+	uint16_t nbTry = 0;
+	uint16_t FifoSpacePrev = 0;
+	uint16_t FifoSpace = 0;
+	bool FifoFull = 0;
+	bool FifoEmpty = 0;
+	for(;;) 
+	{
+			//Send 0 V and try to fill the fifo
+			uint16_t reg = spi_read_write(0x00, 0x00);
+			FifoSpace = reg & FIFO_SPACE_MASK;
+			FifoFull = (reg >> 7) & 1;
+			FifoEmpty = (reg >> 6) & 1;
+			
+			//First time the fifo will be the initial value (should be 0)
+			if(nbTry == 0) 
+			{
+				FifoSpacePrev = FifoSpace;
+			}
+			nbTry++;
+						
+			//If FIFO has less space than before, data is accumulating in the FIFO
+			if ((FifoSpace < FifoSpacePrev && !FifoEmpty) || FifoFull)
+			{	
+				if(drivingSoftwareTrim()) // increase oscillator speed
+				{
+					nbTry = 0;	// redo the loop until the trimming is OK																							
+				}
+			}
+			
+			//If you tried for a long time and did not succeed accumulating points in the fifo
+			if(nbTry > MAX_TRY) 
+			{
+				break; // exit trimming loop
+			}
+		
+	}								
+	 spi_read_write(0x56, 0x07); // disable output once trimming is done.		
+
+	//set the timer back to 8kHz
+	 timer2NewPeriod = timer2DefaultPeriod - TIMER_PERIOD_ACCEL;
+}
+int counter = 0;
+int last_sample = PLAY_SAMPLING_RATE / PRESS_SIGNAL_FREQ; 
+// Phase C - Press Feedback Waveform
+// Multiple entry function - entered every time the timer expires
+static void drivingPressFeedback() 
+{
+	drivingWaitFifoEmpty(); // wait until BOS1901 internal FIFO is empty before sending the waveform points.
+	spi_read_write(0x77, 0xE7);  // set SENSE = 0 to drive the output
+
+    if(counter<last_sample) // playing the waveform
+    {
+		uint8_t reg1 = (uint8_t)((press_waveform[counter] & 0xFF00) >> 8);
+		uint8_t reg2 = (uint8_t)(press_waveform[counter] & 0x00FF);
+        spi_read_write(reg1, reg2);// Timer expired: send a new point
+		counter++;
+    } 
+    else // waveform reached its last point
+    {
+        counter = 0;// cleanup
+		uint8_t reg1 = (uint8_t)((press_waveform[counter] & 0xFF00) >> 8);
+		uint8_t reg2 = (uint8_t)(press_waveform[counter] & 0x00FF);
+        spi_read_write(reg1, reg2); // completing the waveform by playing the initial point again.
+    }
+}
+
+// Phases D - Press Creep Stabilization
+// Single entry function - executed once when called
+static void drivingPressCreepStabilization()
+{
+	volatile uint16_t ignore = spi_read_write(0x56, 0x07); // disable output once trimming is done.
+	// uint8_t reg1 = (uint8_t)((REFERENCE_MINUS_1LSB & 0xFF00) >> 8);
+	// uint8_t reg2 = (uint8_t)(REFERENCE_MINUS_1LSB & 0x00FF);	
+    // spi_read_write(reg1, reg2);   // set FIFO to 0x0FFF
+    // k_msleep(1000*CREEP_HOLD_TIME/SAMPLING_RATE); // wait defined time
+}
+
+void play_haptic_buzz_normal ()
+{
+	for (int a = 0; a < 150; a++)
+	{
+		drivingPressFeedback();
+		k_msleep(5);
+		drivingPressCreepStabilization(); //this causes output to be disabled
+		k_msleep(5);
+	}
+}
+
+//////////////////////SPIIIIIII FUNCTIONS END /////////////////////////////////////////////////////////////////////////////////////////
 //for bluetooth test
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
@@ -215,7 +436,6 @@ void main(void)
 {
     volatile int err;
     // volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
-
     k_msleep(1000);
 
   	/* Initialize the Bluetooth Subsystem */
@@ -227,11 +447,11 @@ void main(void)
 	// err = gpio_pin_interrupt_configure_dt(&ui_btn, GPIO_INT_EDGE_TO_ACTIVE);
 	// err = gpio_pin_interrupt_configure_dt(&fsr_det, GPIO_INT_EDGE_TO_ACTIVE);
 
-    /* SPI Initialization*/
-    // spi_init();
-
     // Initialization
     gpio_pin_configure_dt(&blue_led, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_set_dt(&blue_led, LED_ON);
+	volatile uint16_t ignore = spi_read_write(0x00, 0x6E);
+
     // gpio_pin_configure_dt(&red_led, GPIO_OUTPUT_ACTIVE);
     // gpio_pin_configure_dt(&green_led, GPIO_OUTPUT_ACTIVE);
 
@@ -239,16 +459,20 @@ void main(void)
     // {
     //     adc_channel_setup_dt(&adc_channels[i]);
     // }
-    volatile int val;
+    // volatile int val;
     // Begin main logic
-    gpio_pin_set_dt(&blue_led, LED_ON);
     // gpio_pin_set_dt(&red_led, LED_OFF);
     // gpio_pin_set_dt(&green_led, LED_OFF);
-	volatile uint16_t read_back_data [] = {0x00, 0x00};
+	// volatile uint16_t read_back_data [] = {0x00, 0x00};
+	/* SPI Initialization*/
+    // spi_init();
+	drivingCalculateWaveforms();
+	// drivingTrimming();
     while(1){
-        k_msleep(100);
-		read_back_data[0] = spi_read_write(0x00, 0x6E);
-		read_back_data[1] = spi_read_write(0x00, 0x6E);
+		play_haptic_buzz_normal();
+		k_msleep(2000);
+		// read_back_data[0] = spi_read_write(0x00, 0x6E);
+		// read_back_data[1] = spi_read_write(0x00, 0x6E);
 
 		// spi_read_write(0x3880);
 		// spi_read_write(0x5210);

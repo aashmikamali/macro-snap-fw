@@ -68,6 +68,10 @@ KEEP(*(.gnu.linkonce.irq_vector_table*))
  . = ALIGN(4);
  } > FLASH
  __text_region_end = .;
+ .ARM.extab :
+ {
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+ } > FLASH
  .ARM.exidx :
  {
  __exidx_start = .;
@@ -128,6 +132,27 @@ ztest :
  _ztest_unit_test_list_start = .; KEEP(*(SORT_BY_NAME(._ztest_unit_test.static.*))); _ztest_unit_test_list_end = .;
  _ztest_test_rule_list_start = .; KEEP(*(SORT_BY_NAME(._ztest_test_rule.static.*))); _ztest_test_rule_list_end = .;
 } > FLASH
+ ctors :
+ {
+  . = ALIGN(4);
+  __ZEPHYR_CTOR_LIST__ = .;
+  LONG((__ZEPHYR_CTOR_END__ - __ZEPHYR_CTOR_LIST__) / 4 - 2)
+  KEEP(*(SORT_BY_NAME(".ctors*")))
+  __CTOR_LIST__ = .;
+  LONG(0)
+  __ZEPHYR_CTOR_END__ = .;
+  LONG(0)
+  __CTOR_END__ = .;
+ } > FLASH
+ init_array :
+ {
+  . = ALIGN(4);
+  __init_array_start = .;
+  __init_array_end = .;
+  __zephyr_init_array_start = .;
+  KEEP(*(SORT_BY_NAME(".init_array*")))
+  __zephyr_init_array_end = .;
+ } > FLASH
  bt_l2cap_fixed_chan_area : SUBALIGN(4) { _bt_l2cap_fixed_chan_list_start = .; KEEP(*(SORT_BY_NAME(._bt_l2cap_fixed_chan.static.*))); _bt_l2cap_fixed_chan_list_end = .; } > FLASH
  bt_gatt_service_static_area : SUBALIGN(4) { _bt_gatt_service_static_list_start = .; KEEP(*(SORT_BY_NAME(._bt_gatt_service_static.static.*))); _bt_gatt_service_static_list_end = .; } > FLASH
  log_strings_sections : ALIGN_WITH_INPUT
@@ -186,6 +211,10 @@ ztest :
  *(".rodata.*")
  *(.gnu.linkonce.r.*)
  . = ALIGN(4);
+ } > FLASH
+ .gcc_except_table : ONLY_IF_RO
+ {
+ *(.gcc_except_table .gcc_except_table.*)
  } > FLASH
  __rodata_region_end = .;
  . = ALIGN(_region_min_align); . = ALIGN( 1 << ((((__rodata_region_end - ADDR(rom_start)) <= 4) ? 2 : (((__rodata_region_end - ADDR(rom_start)) <= 8) ? 3 : (((__rodata_region_end - ADDR(rom_start)) <= 16) ? 4 : (((__rodata_region_end - ADDR(rom_start)) <= 32) ? 5 : (((__rodata_region_end - ADDR(rom_start)) <= 64) ? 6 : (((__rodata_region_end - ADDR(rom_start)) <= 128) ? 7 : (((__rodata_region_end - ADDR(rom_start)) <= 256) ? 8 : (((__rodata_region_end - ADDR(rom_start)) <= 512) ? 9 : (((__rodata_region_end - ADDR(rom_start)) <= 1024) ? 10 : (((__rodata_region_end - ADDR(rom_start)) <= 2048) ? 11 : (((__rodata_region_end - ADDR(rom_start)) <= 4096) ? 12 : (((__rodata_region_end - ADDR(rom_start)) <= 8192) ? 13 : (((__rodata_region_end - ADDR(rom_start)) <= 16384) ? 14 : (((__rodata_region_end - ADDR(rom_start)) <= 32768) ? 15:(((__rodata_region_end - ADDR(rom_start)) <= 65536) ? 16 : (((__rodata_region_end - ADDR(rom_start)) <= 131072) ? 17 : (((__rodata_region_end - ADDR(rom_start)) <= 262144) ? 18:(((__rodata_region_end - ADDR(rom_start)) <= 524288) ? 19 : (((__rodata_region_end - ADDR(rom_start)) <= 1048576) ? 20 : (((__rodata_region_end - ADDR(rom_start)) <= 2097152) ? 21 : (((__rodata_region_end - ADDR(rom_start)) <= 4194304) ? 22 : (((__rodata_region_end - ADDR(rom_start)) <= 8388608) ? 23 : (((__rodata_region_end - ADDR(rom_start)) <= 16777216) ? 24 : (((__rodata_region_end - ADDR(rom_start)) <= 33554432) ? 25 : (((__rodata_region_end - ADDR(rom_start)) <= 67108864) ? 26 : (((__rodata_region_end - ADDR(rom_start)) <= 134217728) ? 27 : (((__rodata_region_end - ADDR(rom_start)) <= 268435456) ? 28 : (((__rodata_region_end - ADDR(rom_start)) <= 536870912) ? 29 : (((__rodata_region_end - ADDR(rom_start)) <= 1073741824) ? 30 : (((__rodata_region_end - ADDR(rom_start)) <= 2147483648) ? 31 : 32))))))))))))))))))))))))))))))));
@@ -265,6 +294,10 @@ __ramfunc_load_start = LOADADDR(.ramfunc);
  {
   _net_buf_pool_list = .;
   KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
+ } > RAM AT > FLASH
+ .gcc_except_table : ALIGN_WITH_INPUT ONLY_IF_RW
+ {
+ *(.gcc_except_table .gcc_except_table.*)
  } > RAM AT > FLASH
     __data_region_end = .;
    bss (NOLOAD) : ALIGN_WITH_INPUT
