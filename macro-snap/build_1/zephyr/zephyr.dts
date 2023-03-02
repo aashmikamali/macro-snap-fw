@@ -153,7 +153,8 @@
 				reg = < 0x1 >;
 				zephyr,gain = "ADC_GAIN_1_4";
 				zephyr,acquisition-time = < 0x0 >;
-				zephyr,input-positive = < 0x3 >;
+				zephyr,input-negative = < 0x3 >;
+				zephyr,input-positive = < 0x9 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
 				zephyr,resolution = < 0x8 >;
 			};
@@ -161,7 +162,8 @@
 				reg = < 0x2 >;
 				zephyr,gain = "ADC_GAIN_1_4";
 				zephyr,acquisition-time = < 0x0 >;
-				zephyr,input-positive = < 0x5 >;
+				zephyr,input-negative = < 0x5 >;
+				zephyr,input-positive = < 0x9 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
 				zephyr,resolution = < 0x8 >;
 			};
@@ -169,7 +171,8 @@
 				reg = < 0x3 >;
 				zephyr,gain = "ADC_GAIN_1_4";
 				zephyr,acquisition-time = < 0x0 >;
-				zephyr,input-positive = < 0x7 >;
+				zephyr,input-negative = < 0x7 >;
+				zephyr,input-positive = < 0x9 >;
 				zephyr,reference = "ADC_REF_VDD_1_4";
 				zephyr,resolution = < 0x8 >;
 			};

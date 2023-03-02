@@ -50,7 +50,6 @@ static const struct gpio_dt_spec blue_led = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpi
 // static const struct gpio_dt_spec cs_hapt = GPIO_DT_SPEC_GET(DT_ALIAS(spi0), gpios);
 static const struct gpio_dt_spec ui_btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(uibtn), gpios,{0});
 static const struct gpio_dt_spec fsr_det = GPIO_DT_SPEC_GET_OR(DT_ALIAS(fsrdet), gpios,{0});
-// static struct gpio_callback button_cb_data;
 
 /* SPI defines for the BOS1901 haptic driver*/
 #define BOS1901_MANUFACTURER_ID_ADDR 0x02
@@ -135,8 +134,8 @@ uint16_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 
 //Feedback
 #define SIGNAL_SIZE_MAX             256 // Maximum table size
-#define PRESS_SIGNAL_VOLTAGE        12  // Volts
-#define PRESS_SIGNAL_FREQ           180 // Hertz
+#define PRESS_SIGNAL_VOLTAGE        12  // Volts -> try making this larger
+#define PRESS_SIGNAL_FREQ           60 // Hertz
 #define REG_READ_VFEEDBACK_MASK     0x03FF
 
 // Piezo Creep
@@ -176,11 +175,36 @@ int16_t utilsVolt2Amplitude(float volt)
 static void drivingCalculateWaveforms(void)
 {
     // Press Feedback Waveform : single sine pulse
+	int boolean_switch_sign = 0;
+	int counter = 0;
     press_waveform_size = PLAY_SAMPLING_RATE / PRESS_SIGNAL_FREQ; //about 44
     for(volatile uint8_t i = 0; i < press_waveform_size; i++)
     {
-        press_waveform[i] = utilsVolt2Amplitude(PRESS_SIGNAL_VOLTAGE / 2 * (sin(2*3*i/(press_waveform_size) - 3/2)+1));
-    }
+        //press_waveform[i] = utilsVolt2Amplitude(PRESS_SIGNAL_VOLTAGE / 2 * (sin(2*3*i/(press_waveform_size) - 3/2)+1));
+		if (boolean_switch_sign == 1)
+		{
+			press_waveform[i] = utilsVolt2Amplitude(PRESS_SIGNAL_VOLTAGE);
+		}
+		else
+		{
+			press_waveform[i] = utilsVolt2Amplitude(0);
+		}
+
+		if (counter >= 2 && boolean_switch_sign == 0)
+		{
+			boolean_switch_sign = 1;
+			counter = 0;
+		}
+		else if (counter >= 2 && boolean_switch_sign == 0)
+		{
+			boolean_switch_sign = 0;
+			counter = 0;
+		}
+		else
+		{
+			counter++;
+		}
+	}
 }
 
 
@@ -356,7 +380,7 @@ void play_haptic_buzz_normal ()
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 /* The ble message must be an array of uint*/
-/* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status, [8] = band_is_connected (1 = connected)*/
+/* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status (including cal), [8] = band_is_connected (1 = connected)*/
 uint8_t ble_msg []= {0x0B, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
@@ -431,15 +455,206 @@ void get_adc_readings (uint8_t* array)
     }
 }
 
+//defines for switch case in main logic
+#define START_CAL 0
+#define SNAP_CAL 1
+#define FIST_CAL 2
+#define WSUP_CAL 3
+#define WPRON_CAL 4
+#define WUP_CAL 5
+#define WDOWN_CAL 6
+#define WAIT_FOR_SNAP 7
+#define SEND_GESTURE 8
+
+uint8_t fsr_1_adc_thresh = 0;
+uint8_t fsr_2_adc_thresh = 0;
+uint8_t fsr_3_adc_thresh = 0;
+
+
+uint8_t get_button_press ()
+{
+    return gpio_pin_get_dt(&ui_btn);
+}
+
+uint8_t get_fsr_detect ()
+{
+    return gpio_pin_get_dt(&fsr_det);
+}
+
+#define THRESH_FACTOR 0.85
+
+void snap_measurement_cal(uint8_t* max_snap_values)
+{
+	//this should read the adc readings for about 1 second after the haptic has been activated
+	volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
+	for (int a  = 0; a < 1000; a++)
+	{
+		get_adc_readings(adc_readings);
+		if (adc_readings[1] > max_snap_values[0])
+		{
+			max_snap_values[0] = adc_readings[1];
+		}
+		
+		if (adc_readings[2] > max_snap_values[1])
+		{
+			max_snap_values[1] = adc_readings[2];
+		}
+
+		if (adc_readings[3] > max_snap_values[2])
+		{
+			max_snap_values[2] = adc_readings[3];
+		}
+		k_msleep(1);
+	}
+}
+
+
+int snap_calibration(uint8_t* max_snap_values)
+{
+	play_haptic_buzz_normal();
+	snap_measurement_cal(max_snap_values);
+	k_msleep(1000);
+
+	play_haptic_buzz_normal();
+	snap_measurement_cal(max_snap_values);
+	k_msleep(1000);
+
+	play_haptic_buzz_normal();
+	snap_measurement_cal(max_snap_values);
+	k_msleep(1000);
+
+	max_snap_values[0] *= THRESH_FACTOR;	
+	max_snap_values[1] *= THRESH_FACTOR;
+	max_snap_values[2] *= THRESH_FACTOR;
+
+	int val=0;
+	//wait for calibration process to start from user
+	while (val != 1)
+	{
+		val = get_button_press();
+	}
+	//wait two second to check if the button is being held
+	k_msleep(2000);
+	val = get_button_press();
+	if (val)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+int gesture_calibration(uint8_t* max_snap_values, uint8_t* adc_readings, int gesture, int sample_num)
+{
+	//gesture = 0 is fist, 1 is wrist supanation, 2 is wrist pronation, 3 is wrist up, 4 is wrist down
+	if (sample_num < 4)
+	{
+		//check for snap
+		snap_measurement_cal(max_snap_values);
+		k_msleep(1000);
+	}
+	return 1;
+}
+
+
+void state_machine_control(int* current_state, int* sample_num,  uint8_t* max_snap_values, uint8_t* adc_readings)
+{
+	//set the ble status to the state machine status
+	int err = 0;
+	ble_msg[7] = current_state;
+
+	//variable that is sent over when gesture calibration is conducted
+	int gesture;
+
+	//poll buttons and set BLE message to be it
+	int button_press = get_button_press();
+	int fsr_connect = get_fsr_detect();
+	ble_msg[6] = button_press;
+	ble_msg[8] = fsr_connect;
+
+	//get the adc readings each interval
+    get_adc_readings(adc_readings);
+
+	int gest_done = 0;
+
+	switch (*current_state)
+	{
+		case START_CAL:
+		{
+			//Check for fsr detect and a button press to begin and change to snap cal state
+			if (button_press==1 && fsr_connect==1)
+			{
+				current_state++;
+			}
+		}
+		break;
+		
+		case SNAP_CAL:
+		{
+			//run snap cal and change state only when 
+			err = snap_calibration(max_snap_values);
+			if (err != 0)
+			{
+				current_state++;
+				err=0;
+			}
+		}
+		break;
+
+		case FIST_CAL:
+		{
+			
+		}
+		break;
+
+		case WSUP_CAL:
+		{
+			
+		}
+		break;
+
+		case WPRON_CAL:
+		{
+			
+		}
+		break;
+
+		case WUP_CAL:
+		{
+			
+		}
+		break;		
+
+		case WDOWN_CAL:
+		{
+			
+		}
+		break;		
+
+		case WAIT_FOR_SNAP:
+		{
+			
+		}
+		break;
+
+		case SEND_GESTURE:
+		{
+			
+		}
+		break;		
+	}
+	set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+}  
+
 // Before main executes, zephyr-the RTOS, automatically initializes the pin in/out and set's up the clock
 void main(void)
 {
     volatile int err;
     volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
+	volatile uint8_t snap_max[4] = {0, 0, 0};
     k_msleep(1000);
 
   	/* Initialize the Bluetooth Subsystem */
-    err = bt_enable(bt_ready); //causes reset if used in gdb
+    // err = bt_enable(bt_ready); //causes reset if used in gdb
 
     /* Initialize button and gpio inputs*/
     err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
@@ -457,26 +672,22 @@ void main(void)
         adc_channel_setup_dt(&adc_channels[i]);
     }
 
-    volatile int val;
+    // volatile int val;
+    // volatile int val2;
+	volatile int current_state = 0;
 
 	/* SPI Initialization*/
 	drivingCalculateWaveforms();
 	// Begin main logic
+	int num_gesture = 0;
     while(1){
-		k_msleep(100);
-
-        /*poll the ui button and send that the val 1 or not upon press in the ble msg*/
-        val = gpio_pin_get_dt(&ui_btn);
-        ble_msg[6] = val;
-		if (val == 1)
-		{
-			play_haptic_buzz_normal();
-		}
-
-        val = gpio_pin_get_dt(&fsr_det);
-        ble_msg[8] = val;
-
-        get_adc_readings(adc_readings);
-        set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+		k_msleep(10);
+		// if (val == 1)
+		// {
+		// 	play_haptic_buzz_normal();
+		// }
+        // get_adc_readings(adc_readings);
+		state_machine_control(&current_state, snap_max, adc_readings, &num_gesture);
+        // set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
     };
 }

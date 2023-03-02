@@ -601,8 +601,9 @@
  channel@1 {
   reg = <1>;
   zephyr,gain = "ADC_GAIN_1_4";
-  zephyr,acquisition-time = < 0>;
-  zephyr,input-positive = <3>;
+  zephyr,acquisition-time = <0>;
+  zephyr,input-negative = <3>;
+  zephyr,input-positive = <9>;
   zephyr,reference = "ADC_REF_VDD_1_4";
   zephyr,resolution = <8>;
  };
@@ -610,7 +611,8 @@
   reg = <2>;
   zephyr,gain = "ADC_GAIN_1_4";
   zephyr,acquisition-time = <0>;
-  zephyr,input-positive = <5>;
+  zephyr,input-negative = <5>;
+  zephyr,input-positive = <9>;
   zephyr,reference = "ADC_REF_VDD_1_4";
   zephyr,resolution = <8>;
  };
@@ -618,12 +620,13 @@
   reg = <3>;
   zephyr,gain = "ADC_GAIN_1_4";
   zephyr,acquisition-time = <0>;
-  zephyr,input-positive = <7>;
+  zephyr,input-negative = <7>;
+  zephyr,input-positive = <9>;
   zephyr,reference = "ADC_REF_VDD_1_4";
   zephyr,resolution = <8>;
  };
  };
-# 189 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
+# 192 "/Users/aashmikamali/Documents/Piezosaurus/macro-snap-fw/boards/arm/macro-snap/macro-snap.dts"
 &gpio0 {
  status = "okay";
  gpio-controller;
