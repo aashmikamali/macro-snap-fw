@@ -109,14 +109,25 @@ static volatile uint32_t timer2NewPeriod;
 #define WPRON_CAL 4
 #define WUP_CAL 5
 #define WDOWN_CAL 6
-#define WAIT_FOR_SNAP 7
-#define SEND_GESTURE 8
-#define THRESH_FACTOR 1
-
+#define CALIB_DONE 7
+#define WAIT_FOR_SNAP 8
+#define SEND_GESTURE 9
+#define THRESH_FACTOR_DIV 100
+#define THRESH_FACTOR_MUL 95 //95
+#define LOW_THRESH_FACTOR_MUL 90 //90
+#define THRESH_OFFSET 5
+#define SNAP_COUNT_MAX 25 // 11 this is the number of counts to ramp up and the num to ramp down, ideally this is odd
 //GLOBAL VARS
 int current_state = 0;
 int num_gesture = 0;
+int snap_state = 0; //this counter will check if the snap was done within the reasonable time frame for it to be a snap and not a fist
 int sample_num = 0;
+int upper_snap_threshold = 0;
+int lower_snap_threshold = 0;
+int fsr_with_snap_max = 0;
+int override = 0;
+//change this to be the size of SNAP_COUNT_MAX
+uint8_t prev_adc_readings[SNAP_COUNT_MAX] = {0};
 
 //////////////////////SPIIIIIII FUNCTIONS BEGIN /////////////////////////////////////////////////////////////////////////////////////////
 ///ALL the spi read_write shit ////////////////////////////////////////////
@@ -492,7 +503,7 @@ void snap_measurement_cal(uint8_t* sum_values_maxes)
 	volatile uint8_t adc_vals[4] = {0, 0, 0, 0};
 	volatile uint8_t max_snap_values[3] = {0, 0, 0};
 
-	for (int a  = 0; a < 1000; a++)
+	for (int a  = 0; a < 100; a++)
 	{
 		get_adc_readings(adc_vals);
 		if (adc_vals[1] > max_snap_values[0] && adc_vals[1] < 255)
@@ -510,7 +521,7 @@ void snap_measurement_cal(uint8_t* sum_values_maxes)
 			max_snap_values[2] = adc_vals[3];
 		}
 		set_ble_msg (adc_vals[0], adc_vals[1], adc_vals[2], adc_vals[3]);
-		k_msleep(1);
+		k_msleep(5);
 	}
 	sum_values_maxes[0] += max_snap_values[0];
 	sum_values_maxes[1] += max_snap_values[1];
@@ -538,9 +549,29 @@ int snap_calibration(uint8_t* max_snap_values)
 	max_snap_values[1] = sum_values_maxes[1]/3;
 	max_snap_values[2] = sum_values_maxes[2]/3;
 
-	max_snap_values[0] *= THRESH_FACTOR;	
-	max_snap_values[1] *= THRESH_FACTOR;
-	max_snap_values[2] *= THRESH_FACTOR;
+	// int new_snap_0 = max_snap_values[0]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;	
+	// int new_snap_1 = max_snap_values[1]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+	// int new_snap_2 = max_snap_values[2]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+
+
+	if (max_snap_values[0] >= max_snap_values[1] && max_snap_values[0] >= max_snap_values[2])
+	{
+		fsr_with_snap_max = 0;
+		upper_snap_threshold = max_snap_values[0]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+		lower_snap_threshold = max_snap_values[0]* LOW_THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+	}
+	else if (max_snap_values[1] >= max_snap_values[2])
+	{
+		fsr_with_snap_max = 1;
+		upper_snap_threshold = max_snap_values[1]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+		lower_snap_threshold = max_snap_values[1]* LOW_THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+	}
+	else
+	{
+		fsr_with_snap_max = 2;
+		upper_snap_threshold = max_snap_values[2]* THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+		lower_snap_threshold = max_snap_values[2]* LOW_THRESH_FACTOR_MUL / THRESH_FACTOR_DIV;
+	}
 
 	int val=0;
 	//wait for calibration process to continue from user
@@ -548,8 +579,8 @@ int snap_calibration(uint8_t* max_snap_values)
 	{
 		val = get_button_press();
 	}
-	//wait two second to check if the button is being held
-	k_msleep(2000);
+	//wait one second to check if the button is being held
+	k_msleep(1000);
 	val = get_button_press();
 	if (val == 1)
 	{
@@ -568,7 +599,7 @@ int gesture_calibration(uint8_t* adc_readings)
 		ble_msg[9] = 1;
 		get_adc_readings(adc_readings);
 		set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
-		k_msleep(10);
+		k_msleep(5);
 	}
 	//long haptic for gesture detected
 	play_haptic_buzz_normal();	
@@ -585,20 +616,60 @@ void gesture_reading(uint8_t* adc_readings)
 		ble_msg[9] = 1;
 		get_adc_readings(adc_readings);
 		set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
-		k_msleep(10);
+		k_msleep(5);
 	}
 	//long haptic for gesture detected
 	play_haptic_buzz_normal();	
 	play_haptic_buzz_normal();
 }
 
+void shift_snap_window (int new_reading)
+{
+	for (int a = 0; a < SNAP_COUNT_MAX-1; a++)
+	{
+		prev_adc_readings[a] = prev_adc_readings[a+1];
+	}
+
+	prev_adc_readings[SNAP_COUNT_MAX-1] = new_reading;
+}
+
+void clear_adc_readings()
+{
+	for (int a = 0; a < SNAP_COUNT_MAX; a++)
+	{
+		prev_adc_readings[a] = 0;
+	}	
+}
+
 //return 0 for successful snap, 1 otherwise
 int check_if_snap (uint8_t* max_snap_values, uint8_t* adc_readings)
 {
-	if (adc_readings[1] > max_snap_values[0] && adc_readings[2] > max_snap_values[1] && adc_readings[3] > max_snap_values[2])
+	shift_snap_window(adc_readings[fsr_with_snap_max+1]);
+	// get_adc_readings(adc_readings);
+	if (prev_adc_readings [(SNAP_COUNT_MAX-1)/2] >= upper_snap_threshold && prev_adc_readings[0] < lower_snap_threshold && prev_adc_readings[SNAP_COUNT_MAX-1] < lower_snap_threshold)
 	{
+		clear_adc_readings();
 		return 0;
 	}
+	// if ((adc_readings[1] < max_snap_values[0]+THRESH_OFFSET && adc_readings[2] < max_snap_values[1]+THRESH_OFFSET) || (adc_readings[2] < max_snap_values[1]+THRESH_OFFSET && adc_readings[3] < max_snap_values[2]+THRESH_OFFSET) || (adc_readings[1] < max_snap_values[0]+THRESH_OFFSET && adc_readings[3] < max_snap_values[2]+THRESH_OFFSET))
+	// {
+	// 	k_msleep(5);
+	// 	get_adc_readings(adc_readings);
+	// 	if (adc_readings[1] >= max_snap_values[0] && adc_readings[2] >= max_snap_values[1] && adc_readings[3] >= max_snap_values[2])
+	// 	{
+	// 		k_msleep(50);
+	// 		get_adc_readings(adc_readings);
+	// 		if (adc_readings[1] < max_snap_values[0]+THRESH_OFFSET || adc_readings[2] < max_snap_values[1]+THRESH_OFFSET || adc_readings[3] < max_snap_values[2]+THRESH_OFFSET)
+	// 		//if ((adc_readings[1] < max_snap_values[0] && adc_readings[2] < max_snap_values[1]) || (adc_readings[2] < max_snap_values[1] && adc_readings[3] < max_snap_values[2]) || (adc_readings[1] < max_snap_values[0] && adc_readings[3] < max_snap_values[2]))
+	// 		{
+	// 			return 0;
+	// 		}
+	// 	}
+	// }
+	// else
+	// {
+	// 	k_msleep(5);
+	// }
 	return 1;
 }
 
@@ -630,8 +701,9 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			{
 				current_state++;
 				ble_msg[7] = current_state;
-				k_msleep(3000);
+				k_msleep(500);
 			}
+			// k_msleep(5);
 	}
 	else if (current_state == SNAP_CAL)
 	{
@@ -645,6 +717,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 				err=0;
 			}
 		}
+		// k_msleep(5);
 	}
 	else if (current_state == FIST_CAL)
 	{
@@ -656,15 +729,31 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			no_snap = 1;
 			ble_msg[9] = 0;
 		}
-		if (sample_num >= 4 && gest_done == 1)
+		if (button_press == 1)
+		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
+			// err = get_button_press();
+			// while (err == 0)
+			// {
+			// 	err = get_button_press();
+			// }
+			k_msleep(750);
 			err = get_button_press();
-			while (err == 0)
+			if (err == 0)
 			{
-				err = get_button_press();
+				current_state++;
 			}
-			k_msleep(3000);
-			current_state++;
+			else
+			{
+				while (err == 1)
+				{
+					err = get_button_press();
+				}
+				ble_msg[9] = 2;
+				set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+				k_msleep(400);
+				ble_msg[9] = 0;
+			}
 			sample_num = 0;
 		}
 	}
@@ -678,15 +767,31 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			no_snap = 1;
 
 		}
-		if (sample_num >= 4 && gest_done == 1)
+		if (button_press == 1)
+		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
+			// err = get_button_press();
+			// while (err == 0)
+			// {
+			// 	err = get_button_press();
+			// }
+			k_msleep(750);
 			err = get_button_press();
-			while (err == 0)
+			if (err == 0)
 			{
-				err = get_button_press();
+				current_state++;
 			}
-			k_msleep(3000);
-			current_state++;
+			else
+			{
+				while (err == 1)
+				{
+					err = get_button_press();
+				}
+				ble_msg[9] = 2;
+				set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+				k_msleep(400);
+				ble_msg[9] = 0;
+			}
 			sample_num = 0;
 		}
 	}
@@ -700,15 +805,31 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			no_snap = 1;
 
 		}
-		if (sample_num >= 4 && gest_done == 1)
+		if (button_press == 1)
+		// if (/*sample_num >= 4 &&*/gest_done == 1)
 		{
+			// err = get_button_press();
+			// while (err == 0)
+			// {
+			// 	err = get_button_press();
+			// }
+			k_msleep(750);
 			err = get_button_press();
-			while (err == 0)
+			if (err == 0)
 			{
-				err = get_button_press();
+				current_state++;
 			}
-			k_msleep(3000);
-			current_state++;
+			else
+			{
+				while (err == 1)
+				{
+					err = get_button_press();
+				}
+				ble_msg[9] = 2;
+				set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+				k_msleep(400);
+				ble_msg[9] = 0;
+			}
 			sample_num = 0;
 		}
 	}
@@ -721,15 +842,31 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			gest_done = gesture_calibration(adc_readings);
 			no_snap = 1;
 		}
-		if (sample_num >= 4 && gest_done == 1)
+		if (button_press == 1)
+		// if (/*sample_num >= 4 &&*/gest_done == 1)
 		{
+			// err = get_button_press();
+			// while (err == 0)
+			// {
+			// 	err = get_button_press();
+			// }
+			k_msleep(750);
 			err = get_button_press();
-			while (err == 0)
+			if (err == 0)
 			{
-				err = get_button_press();
+				current_state++;
 			}
-			k_msleep(3000);
-			current_state++;
+			else
+			{
+				while (err == 1)
+				{
+					err = get_button_press();
+				}
+				ble_msg[9] = 2;
+				set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+				k_msleep(400);
+				ble_msg[9] = 0;
+			}
 			sample_num = 0;
 		}
 	}
@@ -743,16 +880,41 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			no_snap = 1;
 
 		}
-		if (sample_num >= 4 && gest_done == 1)
+		if (button_press == 1)
+		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
+			// err = get_button_press();
+			// while (err == 0)
+			// {
+			// 	err = get_button_press();
+			// }
+			k_msleep(750);
 			err = get_button_press();
-			while (err == 0)
+			if (err == 0)
 			{
-				err = get_button_press();
+				current_state++;
 			}
-			k_msleep(3000);
-			current_state++;
+			else
+			{
+				while (err == 1)
+				{
+					err = get_button_press();
+				}
+				ble_msg[9] = 2;
+				set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+				k_msleep(400);
+				ble_msg[9] = 0;
+			}
 			sample_num = 0;
+		}
+	}
+	else if (current_state == CALIB_DONE)
+	{
+		if (button_press == 1)
+		{
+			current_state++;
+			ble_msg[7] = current_state;
+			// k_msleep(500);
 		}
 	}
 	else if (current_state == WAIT_FOR_SNAP) 
@@ -762,16 +924,21 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 		if (no_snap == 0)
 		{
 			current_state++;
-			k_msleep(500);
+			k_msleep(1000);
 		}
 	}	
 	else if (current_state == SEND_GESTURE) 
 	{
+		// k_msleep(5);
 		gesture_reading(adc_readings);
 		current_state--;
 		k_msleep(1000);
 	}
+	k_msleep(5);
+	// if (current_state != WAIT_FOR_SNAP)
+	// {
 	set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+	// }
 }  
 
 // Before main executes, zephyr-the RTOS, automatically initializes the pin in/out and set's up the clock
@@ -808,7 +975,7 @@ void main(void)
 	drivingCalculateWaveforms();
 	// Begin main logic
     while(1){
-		k_msleep(10);
+		// k_msleep(5);
 		// int val = get_button_press();
 		// if (val == 1)
 		// {
