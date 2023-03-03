@@ -64,6 +64,60 @@ static const struct gpio_dt_spec fsr_det = GPIO_DT_SPEC_GET_OR(DT_ALIAS(fsrdet),
 #define BOS1901_REG_CONFIG_OE_MASK 0b111110010000 //masks are setup to && with whatever is already in there
 #define BOS1901_REG_CONFIG_NO_OE_MASK 0b111110000000 //masks are setup to && with whatever is already in there
 
+//Reference Values
+#define REFERENCE_ZERO       0x0000
+#define REFERENCE_PLUS_1LSB  0x0001
+#define REFERENCE_MINUS_1LSB 0x0FFF
+
+//Feedback
+#define SIGNAL_SIZE_MAX             256 // Maximum table size
+#define PRESS_SIGNAL_VOLTAGE        24  // Volts -> try making this larger
+#define PRESS_SIGNAL_FREQ           80 // Hertz
+#define REG_READ_VFEEDBACK_MASK     0x03FF
+
+// Piezo Creep
+#define CREEP_HOLD_TIME     40 // Cycles of 125us (8kHz)
+
+// Timer
+#define TIMER_PERIOD_ACCEL  3 // 3 ticks faster than 125-1
+
+// Trimming
+#define FIFO_SPACE_MASK (0x7F)
+#define MAX_TRY         10800
+#define TRIM_OSC_MAX_POS 0x1F
+#define TRIM_OSC_MASK    0x3F
+
+//playback defines
+#define SAMPLING_RATE	(8000)
+#define PLAY_SAMPLING_RATE (8000)
+
+
+// variables for haptic algo
+static uint16_t press_waveform[SIGNAL_SIZE_MAX];   // Press feedback waveform data points
+static uint16_t press_waveform_size = 0;           // Press feedback waveform number of data points
+
+// Period variables associated with interrupt timer2
+static volatile uint32_t timer2DefaultPeriod;
+static volatile uint32_t timer2NewPeriod;
+
+
+//defines for switch case in main logic
+#define START_CAL 0
+#define SNAP_CAL 1
+#define FIST_CAL 2
+#define WSUP_CAL 3
+#define WPRON_CAL 4
+#define WUP_CAL 5
+#define WDOWN_CAL 6
+#define WAIT_FOR_SNAP 7
+#define SEND_GESTURE 8
+#define THRESH_FACTOR 1
+
+//GLOBAL VARS
+int current_state = 0;
+int num_gesture = 0;
+int sample_num = 0;
+
 //////////////////////SPIIIIIII FUNCTIONS BEGIN /////////////////////////////////////////////////////////////////////////////////////////
 ///ALL the spi read_write shit ////////////////////////////////////////////
 const struct device * spi_dev = DEVICE_DT_GET(DT_ALIAS(spizero)); 
@@ -126,42 +180,6 @@ uint16_t spi_read_write(uint8_t combo_word_1, uint8_t combo_word_2)
 	return rx_receive;
 }
 /////////////////////////////////////////////////////////////////////////////////////////
-
-//Reference Values
-#define REFERENCE_ZERO       0x0000
-#define REFERENCE_PLUS_1LSB  0x0001
-#define REFERENCE_MINUS_1LSB 0x0FFF
-
-//Feedback
-#define SIGNAL_SIZE_MAX             256 // Maximum table size
-#define PRESS_SIGNAL_VOLTAGE        12  // Volts -> try making this larger
-#define PRESS_SIGNAL_FREQ           60 // Hertz
-#define REG_READ_VFEEDBACK_MASK     0x03FF
-
-// Piezo Creep
-#define CREEP_HOLD_TIME     40 // Cycles of 125us (8kHz)
-
-// Timer
-#define TIMER_PERIOD_ACCEL  3 // 3 ticks faster than 125-1
-
-// Trimming
-#define FIFO_SPACE_MASK (0x7F)
-#define MAX_TRY         10800
-#define TRIM_OSC_MAX_POS 0x1F
-#define TRIM_OSC_MASK    0x3F
-
-//playback defines
-#define SAMPLING_RATE	(8000)
-#define PLAY_SAMPLING_RATE (8000)
-
-
-// variables for haptic algo
-static uint16_t press_waveform[SIGNAL_SIZE_MAX];   // Press feedback waveform data points
-static uint16_t press_waveform_size = 0;           // Press feedback waveform number of data points
-
-// Period variables associated with interrupt timer2
-static volatile uint32_t timer2DefaultPeriod;
-static volatile uint32_t timer2NewPeriod;
 
 // Convert value in volts to Amplitude FIFO code
 int16_t utilsVolt2Amplitude(float volt)
@@ -365,7 +383,7 @@ static void drivingPressCreepStabilization()
 
 void play_haptic_buzz_normal ()
 {
-	for (int a = 0; a < 80; a++)
+	for (int a = 0; a < 100; a++)
 	{
 		drivingPressFeedback();
 		k_msleep(5);
@@ -381,7 +399,7 @@ void play_haptic_buzz_normal ()
 
 /* The ble message must be an array of uint*/
 /* [0] = start message pt 1, [1] = start message pt 2, [2] = vbat; [3] = fsr_1; [4] = fsr_2; [5] = fsr_3, [6] = calibration_button, [7] = status (including cal), [8] = band_is_connected (1 = connected)*/
-uint8_t ble_msg []= {0x0B, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+uint8_t ble_msg []= {0x0B, 0xB0, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
@@ -455,20 +473,6 @@ void get_adc_readings (uint8_t* array)
     }
 }
 
-//defines for switch case in main logic
-#define START_CAL 0
-#define SNAP_CAL 1
-#define FIST_CAL 2
-#define WSUP_CAL 3
-#define WPRON_CAL 4
-#define WUP_CAL 5
-#define WDOWN_CAL 6
-#define WAIT_FOR_SNAP 7
-#define SEND_GESTURE 8
-
-uint8_t fsr_1_adc_thresh = 0;
-uint8_t fsr_2_adc_thresh = 0;
-uint8_t fsr_3_adc_thresh = 0;
 
 
 uint8_t get_button_press ()
@@ -481,90 +485,130 @@ uint8_t get_fsr_detect ()
     return gpio_pin_get_dt(&fsr_det);
 }
 
-#define THRESH_FACTOR 0.85
 
-void snap_measurement_cal(uint8_t* max_snap_values)
+void snap_measurement_cal(uint8_t* sum_values_maxes)
 {
 	//this should read the adc readings for about 1 second after the haptic has been activated
-	volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
+	volatile uint8_t adc_vals[4] = {0, 0, 0, 0};
+	volatile uint8_t max_snap_values[3] = {0, 0, 0};
+
 	for (int a  = 0; a < 1000; a++)
 	{
-		get_adc_readings(adc_readings);
-		if (adc_readings[1] > max_snap_values[0])
+		get_adc_readings(adc_vals);
+		if (adc_vals[1] > max_snap_values[0] && adc_vals[1] < 255)
 		{
-			max_snap_values[0] = adc_readings[1];
+			max_snap_values[0] = adc_vals[1];
 		}
 		
-		if (adc_readings[2] > max_snap_values[1])
+		if (adc_vals[2] > max_snap_values[1] && adc_vals[2] < 255)
 		{
-			max_snap_values[1] = adc_readings[2];
+			max_snap_values[1] = adc_vals[2];
 		}
 
-		if (adc_readings[3] > max_snap_values[2])
+		if (adc_vals[3] > max_snap_values[2] && adc_vals[3] < 255)
 		{
-			max_snap_values[2] = adc_readings[3];
+			max_snap_values[2] = adc_vals[3];
 		}
+		set_ble_msg (adc_vals[0], adc_vals[1], adc_vals[2], adc_vals[3]);
 		k_msleep(1);
 	}
+	sum_values_maxes[0] += max_snap_values[0];
+	sum_values_maxes[1] += max_snap_values[1];
+	sum_values_maxes[2] += max_snap_values[2];
+
 }
 
 
 int snap_calibration(uint8_t* max_snap_values)
 {
+	uint8_t sum_values_maxes[3] = {0, 0, 0};
 	play_haptic_buzz_normal();
-	snap_measurement_cal(max_snap_values);
+	snap_measurement_cal(sum_values_maxes);
 	k_msleep(1000);
 
 	play_haptic_buzz_normal();
-	snap_measurement_cal(max_snap_values);
+	snap_measurement_cal(sum_values_maxes);
 	k_msleep(1000);
 
 	play_haptic_buzz_normal();
-	snap_measurement_cal(max_snap_values);
+	snap_measurement_cal(sum_values_maxes);
 	k_msleep(1000);
+
+	max_snap_values[0] = sum_values_maxes[0]/3;
+	max_snap_values[1] = sum_values_maxes[1]/3;
+	max_snap_values[2] = sum_values_maxes[2]/3;
 
 	max_snap_values[0] *= THRESH_FACTOR;	
 	max_snap_values[1] *= THRESH_FACTOR;
 	max_snap_values[2] *= THRESH_FACTOR;
 
 	int val=0;
-	//wait for calibration process to start from user
-	while (val != 1)
+	//wait for calibration process to continue from user
+	while (val == 0)
 	{
 		val = get_button_press();
 	}
 	//wait two second to check if the button is being held
 	k_msleep(2000);
 	val = get_button_press();
-	if (val)
+	if (val == 1)
 	{
 		return 0;
 	}
 	return 1;
 }
 
-int gesture_calibration(uint8_t* max_snap_values, uint8_t* adc_readings, int gesture, int sample_num)
+int gesture_calibration(uint8_t* adc_readings)
 {
 	//gesture = 0 is fist, 1 is wrist supanation, 2 is wrist pronation, 3 is wrist up, 4 is wrist down
-	if (sample_num < 4)
+	//snap is detected, the haptic is played
+	play_haptic_buzz_normal();
+	for (int a  = 0; a < 150; a++)
 	{
-		//check for snap
-		snap_measurement_cal(max_snap_values);
-		k_msleep(1000);
+		ble_msg[9] = 1;
+		get_adc_readings(adc_readings);
+		set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+		k_msleep(10);
+	}
+	//long haptic for gesture detected
+	play_haptic_buzz_normal();	
+	play_haptic_buzz_normal();
+	sample_num++;
+	return 1;
+}
+
+void gesture_reading(uint8_t* adc_readings)
+{
+	play_haptic_buzz_normal();
+	for (int a  = 0; a < 300; a++)
+	{
+		ble_msg[9] = 1;
+		get_adc_readings(adc_readings);
+		set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
+		k_msleep(10);
+	}
+	//long haptic for gesture detected
+	play_haptic_buzz_normal();	
+	play_haptic_buzz_normal();
+}
+
+//return 0 for successful snap, 1 otherwise
+int check_if_snap (uint8_t* max_snap_values, uint8_t* adc_readings)
+{
+	if (adc_readings[1] > max_snap_values[0] && adc_readings[2] > max_snap_values[1] && adc_readings[3] > max_snap_values[2])
+	{
+		return 0;
 	}
 	return 1;
 }
 
-
-void state_machine_control(int* current_state, int* sample_num,  uint8_t* max_snap_values, uint8_t* adc_readings)
+void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 {
 	//set the ble status to the state machine status
 	int err = 0;
 	ble_msg[7] = current_state;
-
-	//variable that is sent over when gesture calibration is conducted
-	int gesture;
-
+	//ble byte that is sent over when gesture calibration is conducted
+	ble_msg[9] = 0;
 	//poll buttons and set BLE message to be it
 	int button_press = get_button_press();
 	int fsr_connect = get_fsr_detect();
@@ -574,73 +618,158 @@ void state_machine_control(int* current_state, int* sample_num,  uint8_t* max_sn
 	//get the adc readings each interval
     get_adc_readings(adc_readings);
 
-	int gest_done = 0;
+	int no_snap = 1;
 
-	switch (*current_state)
+
+	//when gesture is done this will be 1
+	int gest_done = 0;
+	if (current_state == START_CAL)
 	{
-		case START_CAL:
-		{
 			//Check for fsr detect and a button press to begin and change to snap cal state
 			if (button_press==1 && fsr_connect==1)
 			{
 				current_state++;
+				ble_msg[7] = current_state;
+				k_msleep(3000);
 			}
-		}
-		break;
-		
-		case SNAP_CAL:
+	}
+	else if (current_state == SNAP_CAL)
+	{
+		if (button_press == 1)
 		{
 			//run snap cal and change state only when 
 			err = snap_calibration(max_snap_values);
-			if (err != 0)
+			if (err == 1)
 			{
 				current_state++;
 				err=0;
 			}
 		}
-		break;
-
-		case FIST_CAL:
+	}
+	else if (current_state == FIST_CAL)
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
 		{
-			
+			gest_done = gesture_calibration(adc_readings);
+			no_snap = 1;
+			ble_msg[9] = 0;
 		}
-		break;
-
-		case WSUP_CAL:
+		if (sample_num >= 4 && gest_done == 1)
 		{
-			
+			err = get_button_press();
+			while (err == 0)
+			{
+				err = get_button_press();
+			}
+			k_msleep(3000);
+			current_state++;
+			sample_num = 0;
 		}
-		break;
-
-		case WPRON_CAL:
+	}
+	else if (current_state == WSUP_CAL)
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
 		{
-			
-		}
-		break;
+			gest_done = gesture_calibration( adc_readings);
+			no_snap = 1;
 
-		case WUP_CAL:
-		{
-			
 		}
-		break;		
+		if (sample_num >= 4 && gest_done == 1)
+		{
+			err = get_button_press();
+			while (err == 0)
+			{
+				err = get_button_press();
+			}
+			k_msleep(3000);
+			current_state++;
+			sample_num = 0;
+		}
+	}
+	else if (current_state == WPRON_CAL) 
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
+		{
+			gest_done = gesture_calibration(adc_readings);
+			no_snap = 1;
 
-		case WDOWN_CAL:
-		{
-			
 		}
-		break;		
+		if (sample_num >= 4 && gest_done == 1)
+		{
+			err = get_button_press();
+			while (err == 0)
+			{
+				err = get_button_press();
+			}
+			k_msleep(3000);
+			current_state++;
+			sample_num = 0;
+		}
+	}
+	else if (current_state == WUP_CAL) 
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
+		{
+			gest_done = gesture_calibration(adc_readings);
+			no_snap = 1;
+		}
+		if (sample_num >= 4 && gest_done == 1)
+		{
+			err = get_button_press();
+			while (err == 0)
+			{
+				err = get_button_press();
+			}
+			k_msleep(3000);
+			current_state++;
+			sample_num = 0;
+		}
+	}
+	else if (current_state == WDOWN_CAL) 
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
+		{
+			gest_done = gesture_calibration(adc_readings);
+			no_snap = 1;
 
-		case WAIT_FOR_SNAP:
-		{
-			
 		}
-		break;
-
-		case SEND_GESTURE:
+		if (sample_num >= 4 && gest_done == 1)
 		{
-			
+			err = get_button_press();
+			while (err == 0)
+			{
+				err = get_button_press();
+			}
+			k_msleep(3000);
+			current_state++;
+			sample_num = 0;
 		}
-		break;		
+	}
+	else if (current_state == WAIT_FOR_SNAP) 
+	{
+		no_snap = check_if_snap(max_snap_values, adc_readings);
+		//if no_snap is 0 this means there is snap
+		if (no_snap == 0)
+		{
+			current_state++;
+			k_msleep(500);
+		}
+	}	
+	else if (current_state == SEND_GESTURE) 
+	{
+		gesture_reading(adc_readings);
+		current_state--;
+		k_msleep(1000);
 	}
 	set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
 }  
@@ -650,11 +779,11 @@ void main(void)
 {
     volatile int err;
     volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
-	volatile uint8_t snap_max[4] = {0, 0, 0};
-    k_msleep(1000);
+	volatile uint8_t snap_max[3] = {0, 0, 0};
+    k_msleep(100);
 
   	/* Initialize the Bluetooth Subsystem */
-    // err = bt_enable(bt_ready); //causes reset if used in gdb
+    err = bt_enable(bt_ready); //causes reset if used in gdb
 
     /* Initialize button and gpio inputs*/
     err = gpio_pin_configure_dt(&ui_btn, GPIO_INPUT);
@@ -674,20 +803,19 @@ void main(void)
 
     // volatile int val;
     // volatile int val2;
-	volatile int current_state = 0;
 
 	/* SPI Initialization*/
 	drivingCalculateWaveforms();
 	// Begin main logic
-	int num_gesture = 0;
     while(1){
 		k_msleep(10);
+		// int val = get_button_press();
 		// if (val == 1)
 		// {
 		// 	play_haptic_buzz_normal();
 		// }
         // get_adc_readings(adc_readings);
-		state_machine_control(&current_state, snap_max, adc_readings, &num_gesture);
+		state_machine_control(snap_max, adc_readings);
         // set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
     };
 }
