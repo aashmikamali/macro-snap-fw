@@ -385,7 +385,7 @@ static void drivingPressFeedback()
 // Single entry function - executed once when called
 static void drivingPressCreepStabilization()
 {
-	volatile uint16_t ignore = spi_read_write(0x56, 0x07); // disable output once trimming is done.
+    uint16_t ignore = spi_read_write(0x56, 0x07); // disable output once trimming is done.
 	// uint8_t reg1 = (uint8_t)((REFERENCE_MINUS_1LSB & 0xFF00) >> 8);
 	// uint8_t reg2 = (uint8_t)(REFERENCE_MINUS_1LSB & 0x00FF);	
     // spi_read_write(reg1, reg2);   // set FIFO to 0x0FFF
@@ -500,8 +500,8 @@ uint8_t get_fsr_detect ()
 void snap_measurement_cal(uint8_t* sum_values_maxes)
 {
 	//this should read the adc readings for about 1 second after the haptic has been activated
-	volatile uint8_t adc_vals[4] = {0, 0, 0, 0};
-	volatile uint8_t max_snap_values[3] = {0, 0, 0};
+	uint8_t adc_vals[4] = {0, 0, 0, 0};
+	uint8_t max_snap_values[3] = {0, 0, 0};
 
 	for (int a  = 0; a < 100; a++)
 	{
@@ -611,7 +611,7 @@ int gesture_calibration(uint8_t* adc_readings)
 void gesture_reading(uint8_t* adc_readings)
 {
 	play_haptic_buzz_normal();
-	for (int a  = 0; a < 300; a++)
+	for (int a  = 0; a < 150; a++)
 	{
 		ble_msg[9] = 1;
 		get_adc_readings(adc_readings);
@@ -703,7 +703,6 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 				ble_msg[7] = current_state;
 				k_msleep(500);
 			}
-			// k_msleep(5);
 	}
 	else if (current_state == SNAP_CAL)
 	{
@@ -717,7 +716,6 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 				err=0;
 			}
 		}
-		// k_msleep(5);
 	}
 	else if (current_state == FIST_CAL)
 	{
@@ -730,13 +728,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			ble_msg[9] = 0;
 		}
 		if (button_press == 1)
-		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
-			// err = get_button_press();
-			// while (err == 0)
-			// {
-			// 	err = get_button_press();
-			// }
 			k_msleep(750);
 			err = get_button_press();
 			if (err == 0)
@@ -768,13 +760,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 
 		}
 		if (button_press == 1)
-		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
-			// err = get_button_press();
-			// while (err == 0)
-			// {
-			// 	err = get_button_press();
-			// }
 			k_msleep(750);
 			err = get_button_press();
 			if (err == 0)
@@ -806,13 +792,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 
 		}
 		if (button_press == 1)
-		// if (/*sample_num >= 4 &&*/gest_done == 1)
 		{
-			// err = get_button_press();
-			// while (err == 0)
-			// {
-			// 	err = get_button_press();
-			// }
 			k_msleep(750);
 			err = get_button_press();
 			if (err == 0)
@@ -843,13 +823,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 			no_snap = 1;
 		}
 		if (button_press == 1)
-		// if (/*sample_num >= 4 &&*/gest_done == 1)
 		{
-			// err = get_button_press();
-			// while (err == 0)
-			// {
-			// 	err = get_button_press();
-			// }
 			k_msleep(750);
 			err = get_button_press();
 			if (err == 0)
@@ -881,13 +855,7 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 
 		}
 		if (button_press == 1)
-		// if (/*sample_num >= 4 &&*/ gest_done == 1)
 		{
-			// err = get_button_press();
-			// while (err == 0)
-			// {
-			// 	err = get_button_press();
-			// }
 			k_msleep(750);
 			err = get_button_press();
 			if (err == 0)
@@ -914,7 +882,6 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 		{
 			current_state++;
 			ble_msg[7] = current_state;
-			// k_msleep(500);
 		}
 	}
 	else if (current_state == WAIT_FOR_SNAP) 
@@ -929,7 +896,6 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 	}	
 	else if (current_state == SEND_GESTURE) 
 	{
-		// k_msleep(5);
 		gesture_reading(adc_readings);
 		current_state--;
 		k_msleep(1000);
@@ -944,9 +910,9 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 // Before main executes, zephyr-the RTOS, automatically initializes the pin in/out and set's up the clock
 void main(void)
 {
-    volatile int err;
-    volatile uint8_t adc_readings[4] = {0, 0, 0, 0};
-	volatile uint8_t snap_max[3] = {0, 0, 0};
+    int err;
+    uint8_t adc_readings[4] = {0, 0, 0, 0};
+	uint8_t snap_max[3] = {0, 0, 0};
     k_msleep(100);
 
   	/* Initialize the Bluetooth Subsystem */
@@ -967,22 +933,10 @@ void main(void)
     {
         adc_channel_setup_dt(&adc_channels[i]);
     }
-
-    // volatile int val;
-    // volatile int val2;
-
 	/* SPI Initialization*/
 	drivingCalculateWaveforms();
 	// Begin main logic
     while(1){
-		// k_msleep(5);
-		// int val = get_button_press();
-		// if (val == 1)
-		// {
-		// 	play_haptic_buzz_normal();
-		// }
-        // get_adc_readings(adc_readings);
 		state_machine_control(snap_max, adc_readings);
-        // set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
     };
 }
