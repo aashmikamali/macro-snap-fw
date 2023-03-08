@@ -126,6 +126,8 @@ int upper_snap_threshold = 0;
 int lower_snap_threshold = 0;
 int fsr_with_snap_max = 0;
 int override = 0;
+int alt_snap_counter = 0;
+int double_press = 0;
 //change this to be the size of SNAP_COUNT_MAX
 uint8_t prev_adc_readings[SNAP_COUNT_MAX] = {0};
 
@@ -611,9 +613,12 @@ int gesture_calibration(uint8_t* adc_readings)
 void gesture_reading(uint8_t* adc_readings)
 {
 	play_haptic_buzz_normal();
+	int button_press = get_button_press();
 	for (int a  = 0; a < 150; a++)
 	{
 		ble_msg[9] = 1;
+		button_press = get_button_press();
+		ble_msg[6] = button_press;
 		get_adc_readings(adc_readings);
 		set_ble_msg (adc_readings[0], adc_readings[1], adc_readings[2], adc_readings[3]);
 		k_msleep(5);
@@ -644,6 +649,12 @@ void clear_adc_readings()
 //return 0 for successful snap, 1 otherwise
 int check_if_snap (uint8_t* max_snap_values, uint8_t* adc_readings)
 {
+	if (double_press == 4)
+	{
+		double_press = 0;
+		alt_snap_counter = 0;
+		return 0;
+	}
 	shift_snap_window(adc_readings[fsr_with_snap_max+1]);
 	// get_adc_readings(adc_readings);
 	if (prev_adc_readings [(SNAP_COUNT_MAX-1)/2] >= upper_snap_threshold && prev_adc_readings[0] < lower_snap_threshold && prev_adc_readings[SNAP_COUNT_MAX-1] < lower_snap_threshold)
@@ -691,6 +702,39 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 
 	int no_snap = 1;
 
+	//check for double taps of the button
+	if (button_press == 1 && double_press == 0)
+	{
+		alt_snap_counter=1;
+		double_press=1;
+	}
+	else if (alt_snap_counter >= 200)
+	{
+		alt_snap_counter = 0;
+		double_press = 0;
+	}
+	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 1 && button_press == 0)
+	{
+		alt_snap_counter++;
+		double_press=2;
+	}
+	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 2 && button_press == 1)
+	{
+		alt_snap_counter++;
+		double_press=3;		
+	}
+	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 3 && button_press == 0)
+	{
+		double_press=4;
+	}
+	else if (alt_snap_counter > 0)
+	{
+		alt_snap_counter++;
+	}
+	else
+	{
+		double_press = 0;
+	}
 
 	//when gesture is done this will be 1
 	int gest_done = 0;
