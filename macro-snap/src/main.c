@@ -703,37 +703,40 @@ void state_machine_control(uint8_t* max_snap_values, uint8_t* adc_readings)
 	int no_snap = 1;
 
 	//check for double taps of the button
-	if (button_press == 1 && double_press == 0)
+	if (current_state == WAIT_FOR_SNAP)
 	{
-		alt_snap_counter=1;
-		double_press=1;
-	}
-	else if (alt_snap_counter >= 200)
-	{
-		alt_snap_counter = 0;
-		double_press = 0;
-	}
-	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 1 && button_press == 0)
-	{
-		alt_snap_counter++;
-		double_press=2;
-	}
-	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 2 && button_press == 1)
-	{
-		alt_snap_counter++;
-		double_press=3;		
-	}
-	else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 3 && button_press == 0)
-	{
-		double_press=4;
-	}
-	else if (alt_snap_counter > 0)
-	{
-		alt_snap_counter++;
-	}
-	else
-	{
-		double_press = 0;
+		if (button_press == 1 && double_press == 0)
+		{
+			alt_snap_counter=1;
+			double_press=1;
+		}
+		else if (alt_snap_counter >= 200)
+		{
+			alt_snap_counter = 0;
+			double_press = 0;
+		}
+		else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 1 && button_press == 0)
+		{
+			alt_snap_counter++;
+			double_press=2;
+		}
+		else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 2 && button_press == 1)
+		{
+			alt_snap_counter++;
+			double_press=3;		
+		}
+		else if (alt_snap_counter < 200 && alt_snap_counter > 0 && double_press == 3 && button_press == 0)
+		{
+			double_press=4;
+		}
+		else if (alt_snap_counter > 0)
+		{
+			alt_snap_counter++;
+		}
+		else
+		{
+			double_press = 0;
+		}
 	}
 
 	//when gesture is done this will be 1
